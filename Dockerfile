@@ -1,7 +1,7 @@
 ##################################################
 # Section 1: Build the application
 FROM ubuntu:18.04 as builder
-MAINTAINER Christian Berger christian.berger@gu.se
+MAINTAINER Zhijei Wei guszhiwei@student.gu.se
 
 RUN apt-get update -y && \
     apt-get upgrade -y && \
