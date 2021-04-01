@@ -5,38 +5,52 @@
 1. Set up your Linux development environment by downloading all the necessary tools using the following commands:
 
 `sudo apt-get update`
+
 `sudo apt-get upgrade`
+
 `sudo apt-get install build-essential cmake git`
 
 To install docker, go to the following:
 https://docs.docker.com/engine/install/ubuntu/
 
 Add your user to the group docker to run Docker without superuser privileges using the following command:
+
 `sudo usermod -aG docker $USER `
 
 To install docker, go to the following:
 https://docs.docker.com/compose/install/
 
 2. To check that you have all the required tools, use the following commands:
+
 `g++ --version`
+
 `make --version`
+
 `cmake --version`
+
 `git --version`
+
 `docker --version`
+
 `docker-compose --version`
 
 3. Create a clean folder to house the repository
 4. To generate a public SSH key, go to the following SSH key documentation:
     1. To generate an SSH key: (sh/README.html) 
     2. To copy public key (https://docs.gitlab.com/ee/ssh/README.html#add-an-ssh-key-to-your-gitlab-account)
+    
+
 5. Click on "Clone" and copy the "Clone with SSH" URL
 6. Navigate to the clean folder on your system and type the following to clone the repo: git clone <your clone with SSH repo URL>
 
 7. Build the project using the following commands: 
 
 `mkdir build`
+
 `cd build`
+
 `cmake ..`
+
 `make`
 
 8. Build the project using Docker. Open a new terminal and navigate to the folder containing all the source files. Use the following command to run the build:
