@@ -25,6 +25,11 @@
 * Members are expected to be on time for meetings and other planned activities.
  
  
-## How will we solve conflicts? 
-* We plan to have open communication and transparency in the team.
-* If there are any issues within the team we will bring it up to the other members and do our best to resolve the conflict.
+## How will we solve conflicts?   
+* We plan to have open communication and transparency in the team. 
+* If there are any issues within the team we will bring it up to the other members and do our best to resolve the conflict through discussion.
+* If there are conflicts relating to working processes or how to approach something, we will vote as a team and go with the majority.
+* To prevent potential conflicts due to the distance working environment, the team will take regular breaks. 
+* If a team member feels that they need a moment away from the project, they can just inform the rest of the team and take a break.
+
+
