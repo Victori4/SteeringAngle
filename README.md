@@ -1,5 +1,7 @@
 # 2021-group-16
 
+[![project status](https://git.chalmers.se/courses/dit638/students/2021-group-16/badges/master/pipeline.svg)](https://git.chalmers.se/courses/dit638/students/2021-group-16/badges/master)
+
 # READ ME
 ## How to set up the project
 1. Set up your Linux development environment by downloading all the necessary tools using the following commands:
