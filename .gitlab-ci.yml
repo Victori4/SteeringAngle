@@ -55,3 +55,8 @@ release:
   script:
     - docker build -f Dockerfile -t "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG" .
     - docker push "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG"
+
+  # The below creates a rule where the deployment stage is executed only on new releases
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: on_success
