@@ -27,7 +27,6 @@ services:
 stages:
   - build
   - deploy
-  - release
 
 # Display information before we start the build.
 before_script:
@@ -44,12 +43,6 @@ build-and-test:
   script:
     - docker build -f Dockerfile .
 
-    # The below creates a rule where the pipeline will not build and test when there is a release tag in the commit message
-#workflow:
- # rules:
-   # - if: $CI_COMMIT_TAG
-   #   when: never
-
 # This section describes what shall be done to deploy artefacts from the project.
 release:
   tags:
@@ -59,20 +52,8 @@ release:
     - docker build -f Dockerfile -t "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG" .
     - docker push "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG"
 
-  # The below creates a rule where the deployment stage is executed only on new releases and follows semantic version pattern (vX.Y.Z)
+  # The below creates a rule where the deployment stage is executed only on new releases and follows semantic version pattern (vX.Y.Z) Regex taken from https://ihateregex.io/expr/semver/
   rules:
-    - if: $CI_COMMIT_TAG =~ $MAJOR_MINOR_REVISION
+    - if: $CI_COMMIT_TAG =~ ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
       when: on_success
-       
-release_job:
-  stage: release
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  rules:
-    - if: $CI_COMMIT_TAG                  # Run this job when a tag is created manually
-  script:
-    - echo 'running release_job'
-  release:
-    name: 'Release $CI_COMMIT_TAG'
-    description: 'Created using the release-cli $EXTRA_DESCRIPTION'  # $EXTRA_DESCRIPTION must be defined
-    tag_name: ${MAJOR}_${MINOR}_${REVISION}                                      # elsewhere in the pipeline.
-    ref: '$CI_COMMIT_TAG'
+    
