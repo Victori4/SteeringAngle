@@ -58,5 +58,5 @@ release:
 
   # The below creates a rule where the deployment stage is executed only on new releases and follows semantic version pattern (vX.Y.Z)
   rules:
-    - if: $CI_COMMIT_TAG =~ $MAJOR_$MINOR_$REVISION
+    - if: $CI_COMMIT_TAG =~ $MAJOR_MINOR_REVISION
       when: on_success
