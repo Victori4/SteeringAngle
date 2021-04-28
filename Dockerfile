@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # First stage for building the software:
-FROM ubuntu:18.04 as builder
+FROM registry.git.chalmers.se/courses/dit638/students/2021-group-16/ubuntu:18.04 as builder
 MAINTAINER Christian Berger "christian.berger@gu.se"
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -41,7 +41,7 @@ RUN mkdir build && \
 
 
 # Second stage for packaging the software into a software bundle:
-FROM ubuntu:18.04
+FROM registry.git.chalmers.se/courses/dit638/students/2021-group-16/ubuntu:18.04
 MAINTAINER Christian Berger "christian.berger@gu.se"
 
 ENV DEBIAN_FRONTEND noninteractive
