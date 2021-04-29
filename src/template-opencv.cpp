@@ -118,7 +118,11 @@ int32_t main(int32_t argc, char **argv) {
 
                 // TODO: Do something with the frame.
                 // Example: Draw a red rectangle and display image.
-                cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0,0,255));
+                 //cv::rectangle(img, cv::Point(400, 230), cv::Point(300, 400), cv::Scalar(0,0,255));
+
+                // Cutting a region of interest
+                cv::Rect regionOfInterest = cv::Rect(410, 255, 230, 100);
+                cv::Mat imageWithRegion = img(regionOfInterest);
 
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
@@ -154,7 +158,7 @@ int32_t main(int32_t argc, char **argv) {
 
                 // Display image on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), img);
+                    cv::imshow(sharedMemory->name().c_str(), imageWithRegion);
                     cv::waitKey(1);
                 }
             }
