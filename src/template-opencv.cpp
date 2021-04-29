@@ -69,6 +69,22 @@ int32_t main(int32_t argc, char **argv) {
             };
 
             od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
+ 
+// HSV values
+ int minHueBlue = 36;
+ int maxHueBlue = 147;
+ int minSatBlue = 85;
+ int maxSatBlue = 202;
+ int minValueBlue = 46;
+ int maxValueBlue = 222;
+
+ int minHueYellow = 0;
+ int maxHueYellow = 46;
+ int minSatYellow  = 101;
+ int maxSatYellow = 221;
+ int minValueYellow = 177;
+ int maxValueYellow = 255;
+
 
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning()) {
