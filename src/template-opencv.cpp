@@ -124,6 +124,13 @@ int32_t main(int32_t argc, char **argv) {
                 cv::Rect regionOfInterest = cv::Rect(410, 255, 230, 100);
                 cv::Mat imageWithRegion = img(regionOfInterest);
 
+                // Operation to find blue cones in HSV image
+                cv::Mat hsvBlueImg;
+                cv::cvtColor(imageWithRegion, hsvBlueImg, cv::COLOR_BGR2HSV);
+                cv::Mat detectBlueImg;
+                cv::inRange(hsvBlueImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectBlueImg);
+
+
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
                	cluon::data::TimeStamp time = cluon::time::now(); // Saves current time to var
@@ -158,7 +165,7 @@ int32_t main(int32_t argc, char **argv) {
 
                 // Display image on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), imageWithRegion);
+                    cv::imshow(sharedMemory->name().c_str(), detectBlueImg);
                     cv::waitKey(1);
                 }
             }
