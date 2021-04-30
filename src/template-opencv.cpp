@@ -71,18 +71,18 @@ int32_t main(int32_t argc, char **argv) {
             od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
  
 // HSV values
- int minHueBlue = 36;
- int maxHueBlue = 147;
- int minSatBlue = 85;
- int maxSatBlue = 202;
- int minValueBlue = 46;
+ int minHueBlue = 102;
+ int maxHueBlue = 150;
+ int minSatBlue = 88;
+ int maxSatBlue = 165;
+ int minValueBlue = 43;
  int maxValueBlue = 222;
 
  int minHueYellow = 0;
  int maxHueYellow = 46;
- int minSatYellow  = 101;
+ int minSatYellow  = 108;
  int maxSatYellow = 221;
- int minValueYellow = 177;
+ int minValueYellow = 104;
  int maxValueYellow = 255;
 
 
@@ -118,24 +118,31 @@ int32_t main(int32_t argc, char **argv) {
 
                 // TODO: Do something with the frame.
                 // Example: Draw a red rectangle and display image.
+                 cv::rectangle(img, cv::Rect(350, 245, 230, 115), cv::Scalar(255,255,0));
                  cv::rectangle(img, cv::Rect(125, 245, 230, 115), cv::Scalar(0,0,255));
+                 cv::rectangle(img, cv::Rect(200, 245, 230, 115), cv::Scalar(255,255,255));
 
                 // Cutting a region of interest
 		// centered cv::Rect(200, 245, 230, 115)
-                cv::Rect regionOfInterest = cv::Rect(300, 245, 230, 115);
-                cv::Mat imageWithRegion = img(regionOfInterest);
+                cv::Rect regionOfInterestYellow = cv::Rect(350, 245, 230, 115);
+                cv::Rect regionOfInterestBlue = cv::Rect(125, 245, 230, 115);
+                cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
+
+                cv::Mat imageWithRegionYellow = img(regionOfInterestYellow);
+                cv::Mat imageWithRegionBlue = img(regionOfInterestBlue);
+                cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
 
                 // Operation to find blue cones in HSV image
 		// maybe good for blue cv::Rect(125, 245, 230, 115)
                 cv::Mat hsvBlueImg;
-                cv::cvtColor(imageWithRegion, hsvBlueImg, cv::COLOR_BGR2HSV);
+                cv::cvtColor(imageWithRegionBlue, hsvBlueImg, cv::COLOR_BGR2HSV);
                 cv::Mat detectBlueImg;
                 cv::inRange(hsvBlueImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectBlueImg);
 
 		 // Operation to find yellow cones in HSV image
 	         // cv::Rect(300, 245, 230, 115) "good" for yellow
                 cv::Mat hsvYellowImg;
-                cv::cvtColor(imageWithRegion, hsvYellowImg, cv::COLOR_BGR2HSV);
+                cv::cvtColor(imageWithRegionYellow, hsvYellowImg, cv::COLOR_BGR2HSV);
                 cv::Mat detectYellowImg;
                 cv::inRange(hsvYellowImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectYellowImg);
 
@@ -173,7 +180,7 @@ int32_t main(int32_t argc, char **argv) {
 
                 // Display image on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), img);
+                    cv::imshow(sharedMemory->name().c_str(), detectBlueImg);
 		    //cv::imshow(sharedMemory->name().c_str(), detectYellowImg);
                     cv::waitKey(1);
                 }
