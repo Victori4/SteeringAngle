@@ -118,18 +118,26 @@ int32_t main(int32_t argc, char **argv) {
 
                 // TODO: Do something with the frame.
                 // Example: Draw a red rectangle and display image.
-                 //cv::rectangle(img, cv::Point(400, 230), cv::Point(300, 400), cv::Scalar(0,0,255));
+                 cv::rectangle(img, cv::Rect(125, 245, 230, 115), cv::Scalar(0,0,255));
 
                 // Cutting a region of interest
-                cv::Rect regionOfInterest = cv::Rect(410, 255, 230, 100);
+		// centered cv::Rect(200, 245, 230, 115)
+                cv::Rect regionOfInterest = cv::Rect(300, 245, 230, 115);
                 cv::Mat imageWithRegion = img(regionOfInterest);
 
                 // Operation to find blue cones in HSV image
+		// maybe good for blue cv::Rect(125, 245, 230, 115)
                 cv::Mat hsvBlueImg;
                 cv::cvtColor(imageWithRegion, hsvBlueImg, cv::COLOR_BGR2HSV);
                 cv::Mat detectBlueImg;
                 cv::inRange(hsvBlueImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectBlueImg);
 
+		 // Operation to find yellow cones in HSV image
+	         // cv::Rect(300, 245, 230, 115) "good" for yellow
+                cv::Mat hsvYellowImg;
+                cv::cvtColor(imageWithRegion, hsvYellowImg, cv::COLOR_BGR2HSV);
+                cv::Mat detectYellowImg;
+                cv::inRange(hsvYellowImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectYellowImg);
 
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
@@ -165,7 +173,8 @@ int32_t main(int32_t argc, char **argv) {
 
                 // Display image on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), detectBlueImg);
+                    cv::imshow(sharedMemory->name().c_str(), img);
+		    //cv::imshow(sharedMemory->name().c_str(), detectYellowImg);
                     cv::waitKey(1);
                 }
             }
