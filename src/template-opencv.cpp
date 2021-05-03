@@ -139,12 +139,49 @@ int32_t main(int32_t argc, char **argv) {
                 cv::Mat detectBlueImg;
                 cv::inRange(hsvBlueImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectBlueImg);
 
+            //Applying Gaussian blur to detectBlueImg
+                cv::GaussianBlur(detectBlueImg, detectBlueImg, cv::Size(5, 5), 0);
+
+            //Applying dilate and erode to detectBlueImg to remove holes from foreground
+                cv::dilate(detectBlueImg, detectBlueImg, 0);
+                cv::erode(detectBlueImg, detectBlueImg, 0);
+
+            //Applying erode and dilate to detectBlueImg to remove small objects from foreground
+                cv::erode(detectBlueImg, detectBlueImg, 0);
+                cv::dilate(detectBlueImg, detectBlueImg, 0);
+
+            // The below will find the contours of the cones in detectBlueImg and store them in a vector
+                std::vector<std::vector<cv::Point> > contours;
+                std::vector<cv::Vec4i> hierarchy;
+                cv::findContours(detectBlueImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+            // The below will draw the cone contours onto detectBlueImg (copied code from opencv doc)
+                int idx = 0;
+                cv::Mat contourImage = cv::Mat::zeros(detectBlueImg.rows, detectBlueImg.cols, CV_8UC3);
+                for( ; idx >=0; idx = hierarchy[idx][0]) {
+                    cv::Scalar colour( 255, 255, 0);
+                    cv::drawContours(contourImage, contours, idx, colour, -1, 8, hierarchy );
+                }
+
+                // -1, (0, 255, 75), 2
+
 		 // Operation to find yellow cones in HSV image
 	         // cv::Rect(300, 245, 230, 115) "good" for yellow
                 cv::Mat hsvYellowImg;
                 cv::cvtColor(imageWithRegionYellow, hsvYellowImg, cv::COLOR_BGR2HSV);
                 cv::Mat detectYellowImg;
                 cv::inRange(hsvYellowImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectYellowImg);
+
+             //Applying Gaussian blur to detectYellowImg
+                cv::GaussianBlur(detectYellowImg, detectYellowImg, cv::Size(5, 5), 0);
+
+             //Applying dilate and erode to detectYellowImg to remove holes from foreground
+                cv::dilate(detectYellowImg, detectYellowImg, 0);
+                cv::erode(detectYellowImg, detectYellowImg, 0);
+
+             //Applying erode and dilate to detectYellowImg to remove small objects from foreground
+                cv::erode(detectYellowImg, detectYellowImg, 0);
+                cv::dilate(detectYellowImg, detectYellowImg, 0);
 
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
@@ -180,7 +217,7 @@ int32_t main(int32_t argc, char **argv) {
 
                 // Display image on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), detectBlueImg);
+                    cv::imshow(sharedMemory->name().c_str(), contourImage);
 		    //cv::imshow(sharedMemory->name().c_str(), detectYellowImg);
                     cv::waitKey(1);
                 }
