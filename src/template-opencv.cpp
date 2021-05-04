@@ -85,112 +85,118 @@ int32_t main(int32_t argc, char **argv) {
  int minValueYellow = 104;
  int maxValueYellow = 255;
 
+ int frameCounter = 0;
 
-            // Endless loop; end the program by pressing Ctrl-C.
-            while (od4.isRunning()) {
-                // OpenCV data structure to hold an image.
-                cv::Mat img;
+// left car direction is negative (counter clockwise), default value
+int carDirection = -1;
 
-                // Wait for a notification of a new frame.
-                sharedMemory->wait();
 
-                // Lock the shared memory.
-                sharedMemory->lock();
+    // Endless loop; end the program by pressing Ctrl-C.
+    while (od4.isRunning()) {
+
+        frameCounter++;
+        // OpenCV data structure to hold an image.
+        cv::Mat img;
+
+        // Wait for a notification of a new frame.
+        sharedMemory->wait();
+
+        // Lock the shared memory.
+        sharedMemory->lock();
+        {
+            // Copy the pixels from the shared memory into our own data structure.
+            cv::Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory->data());
+            img = wrapped.clone();
+        }
+        // TODO: Here, you can add some code to check the sampleTimePoint when the current frame was captured.                            
+
+        // Get current sample time
+        // this is a data type that holds 2 in
+        std::pair<bool, cluon::data::TimeStamp> sTime = sharedMemory->getTimeStamp(); // Saving current time in sTime var
+
+       // Convert TimeStamp obj into microseconds
+        int64_t sMicro = cluon::time::toMicroseconds(sTime.second);
+
+        char buffer[25];
+        std::sprintf(buffer, "ts: %ld; ", sMicro); 
+        //std::cout << buffer;
+
+        sharedMemory->unlock();
+
+        // TODO: Do something with the frame.
+        // Example: Draw a red rectangle and display image.
+        
+        cv::rectangle(img, cv::Rect(80, 235, 125, 100), cv::Scalar(0,0,255));
+        cv::rectangle(img, cv::Rect(200, 245, 230, 115), cv::Scalar(255,255,255));
+
+        // Cutting a region of interest
+        // centered cv::Rect(200, 245, 230, 115)
+    
+        cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
+        cv::Rect regionOfInterestLeft = cv::Rect(80, 235, 125, 100);
+        cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
+        cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
+        cv::Mat hsvLeftImg;
+        cv::Mat detectLeftImg;
+
+        int frameSampleSize = 5;
+    
+        // value may need to be changed depending on threshold and our performance
+        int identifiedShape = 72;
+
+        // flag to check if blue cones have been detected
+        int blueConeExists = 0;
+
+            // loop runs until frame counter is greater than the sample size of 5
+
+        if (frameCounter < frameSampleSize)
+        {
+           
+        // Operation to find blue cones in HSV image
+// maybe good for blue cv::Rect(125, 245, 230, 115)
+        cv::cvtColor(imageWithRegionLeft, hsvLeftImg, cv::COLOR_BGR2HSV);
+        cv::inRange(hsvLeftImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectLeftImg);
+
+    //Applying Gaussian blur to detectBlueImg
+        cv::GaussianBlur(detectLeftImg, detectLeftImg, cv::Size(5, 5), 0);
+
+    //Applying dilate and erode to detectBlueImg to remove holes from foreground
+        cv::dilate(detectLeftImg, detectLeftImg, 0);
+        cv::erode(detectLeftImg, detectLeftImg, 0);
+
+    //Applying erode and dilate to detectBlueImg to remove small objects from foreground
+        cv::erode(detectLeftImg, detectLeftImg, 0);
+        cv::dilate(detectLeftImg, detectLeftImg, 0);
+
+    // The below will find the contours of the cones in detectBlueImg and store them in a vector
+        std::vector<std::vector<cv::Point> > leftContours;
+        std::vector<cv::Vec4i> leftHierarchy;
+        cv::findContours(detectLeftImg, leftContours, leftHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+
+    // The below will draw the cone contours onto detectBlueImg (copied code from opencv doc)
+        
+        cv::Mat leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
+
+            for(unsigned int i = 0; i < leftContours.size(); i++){
+                
+                if (cv::contourArea(leftContours[i]) > identifiedShape )
                 {
-                    // Copy the pixels from the shared memory into our own data structure.
-                    cv::Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory->data());
-                    img = wrapped.clone();
-                }
-                // TODO: Here, you can add some code to check the sampleTimePoint when the current frame was captured.                            
+                    cv::Scalar colour( 255, 255, 0);
+                    cv::drawContours(leftContourImage, leftContours, i, colour, -1, 8, leftHierarchy );
+                    blueConeExists = 1;
 
-                // Get current sample time
-                // this is a data type that holds 2 in
-                std::pair<bool, cluon::data::TimeStamp> sTime = sharedMemory->getTimeStamp(); // Saving current time in sTime var
-
-               // Convert TimeStamp obj into microseconds
-               	int64_t sMicro = cluon::time::toMicroseconds(sTime.second);
-
-                char buffer[25];
-                std::sprintf(buffer, "ts: %ld; ", sMicro); 
-                //std::cout << buffer;
-
-                sharedMemory->unlock();
-
-                // TODO: Do something with the frame.
-                // Example: Draw a red rectangle and display image.
-                
-                cv::rectangle(img, cv::Rect(125, 245, 230, 115), cv::Scalar(0,0,255));
-                cv::rectangle(img, cv::Rect(200, 245, 230, 115), cv::Scalar(255,255,255));
-
-                // Cutting a region of interest
-		        // centered cv::Rect(200, 245, 230, 115)
-            
-                cv::Rect regionOfInterestLeft = cv::Rect(125, 245, 230, 115);
-                cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
-
-                cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
-                cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
-
-                // Operation to find blue cones in HSV image
-		// maybe good for blue cv::Rect(125, 245, 230, 115)
-                cv::Mat hsvLeftImg;
-                cv::cvtColor(imageWithRegionLeft, hsvLeftImg, cv::COLOR_BGR2HSV);
-                cv::Mat detectLeftImg;
-                cv::inRange(hsvLeftImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectLeftImg);
-
-            //Applying Gaussian blur to detectBlueImg
-                cv::GaussianBlur(detectLeftImg, detectLeftImg, cv::Size(5, 5), 0);
-
-            //Applying dilate and erode to detectBlueImg to remove holes from foreground
-                cv::dilate(detectLeftImg, detectLeftImg, 0);
-                cv::erode(detectLeftImg, detectLeftImg, 0);
-
-            //Applying erode and dilate to detectBlueImg to remove small objects from foreground
-                cv::erode(detectLeftImg, detectLeftImg, 0);
-                cv::dilate(detectLeftImg, detectLeftImg, 0);
-
-            // The below will find the contours of the cones in detectBlueImg and store them in a vector
-                std::vector<std::vector<cv::Point> > leftContours;
-                std::vector<cv::Vec4i> leftHierarchy;
-                cv::findContours(detectLeftImg, leftContours, leftHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
-
-            // The below will draw the cone contours onto detectBlueImg (copied code from opencv doc)
-                
-                cv::Mat leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
-
-                // value may need to be changed depending on threshold and our performance
-                int identifiedShape = 50;
-
-                // flag to check if blue cones have been detected
-                int blueConeExists = 0;
-
-                // left car direction is positive (clockwise), default value
-                int carDirection = 1;
-                for(unsigned int i = 0; i < leftContours.size(); i++){
-                    
-                    // 2 draws the outline of the cones. Replacing this with -1 would fill in the cone shape
-                    
-
-                    if (cv::contourArea(leftContours[i]) > identifiedShape )
+                    // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
+                    if (blueConeExists == 1) 
                     {
-                        cv::Scalar colour( 255, 255, 0);
-                        cv::drawContours(leftContourImage, leftContours, i, colour, -1, 8, leftHierarchy );
-                        blueConeExists = 1;
-
-                        // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
-                    if (blueConeExists == 0) 
-                    {
-                        carDirection = -1;
+                        carDirection = 1;
                     }
-                        }
-
                 }
+            }
+            std::cout << "frame counter" << frameCounter;
+        }
              
-
-
-
-		 // // Operation to find yellow cones in HSV image
-	  //        // cv::Rect(300, 245, 230, 115) "good" for yellow
+         // // Operation to find yellow cones in HSV image
+      //        // cv::Rect(300, 245, 230, 115) "good" for yellow
    //             cv::Mat hsvYellowImg;
    //              cv::cvtColor(imageWithRegionYellow, hsvYellowImg, cv::COLOR_BGR2HSV);
    //              cv::Mat detectYellowImg;
@@ -221,11 +227,9 @@ int32_t main(int32_t argc, char **argv) {
    //                  cv::drawContours(yellowContourImage, yellowContours, idx2, colour, 2, 8, yellowHierarchy );
    //              }
 
-
-
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
-               	cluon::data::TimeStamp time = cluon::time::now(); // Saves current time to var
+                cluon::data::TimeStamp time = cluon::time::now(); // Saves current time to var
                 int sec = time.seconds(); // Saves current time as int to sec var
                 std::time_t lt = sec; // Initialize time_t using sec var
                 char buf[30]; // Buffer to hold time
@@ -244,21 +248,21 @@ int32_t main(int32_t argc, char **argv) {
 
                 // Displays information on video
                 cv::putText(img, //target image
-                			complete, 
-                    		cv::Point(25, 50), 
-                    		cv::FONT_HERSHEY_DUPLEX,
-                    		0.5,
-                    		CV_RGB(0,250,154));
+                            complete, 
+                            cv::Point(25, 50), 
+                            cv::FONT_HERSHEY_DUPLEX,
+                            0.5,
+                            CV_RGB(0,250,154));
 
                                 {
                     std::lock_guard<std::mutex> lck(gsrMutex);
-                    std::cout << "group_16;" << " sampleTimeStamp in microseconds: " << sMicro << " steeringWheelAngle: " << gsr.groundSteering() << "Car direction: " << carDirection << std::endl;
+                    std::cout << "group_16;" << " sampleTimeStamp in microseconds: " << sMicro << " steeringWheelAngle: " << gsr.groundSteering() << "Car direction: " << carDirection << "Frame Counter: " << frameCounter << std::endl;
                 }
 
                 // Display image on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), leftContourImage);
-		    //cv::imshow(sharedMemory->name().c_str(), yellowContourImage);
+                    cv::imshow(sharedMemory->name().c_str(), imageWithRegionLeft);
+            //cv::imshow(sharedMemory->name().c_str(), yellowContourImage);
                     cv::waitKey(1);
                 }
             }
