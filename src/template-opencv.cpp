@@ -118,12 +118,12 @@ int32_t main(int32_t argc, char **argv) {
 
                 // TODO: Do something with the frame.
                 // Example: Draw a red rectangle and display image.
-                 cv::rectangle(img, cv::Rect(350, 245, 230, 115), cv::Scalar(255,255,0));
-                 cv::rectangle(img, cv::Rect(125, 245, 230, 115), cv::Scalar(0,0,255));
-                 cv::rectangle(img, cv::Rect(200, 245, 230, 115), cv::Scalar(255,255,255));
+                cv::rectangle(img, cv::Rect(350, 245, 230, 115), cv::Scalar(255,255,0));
+                cv::rectangle(img, cv::Rect(125, 245, 230, 115), cv::Scalar(0,0,255));
+                cv::rectangle(img, cv::Rect(200, 245, 230, 115), cv::Scalar(255,255,255));
 
                 // Cutting a region of interest
-		// centered cv::Rect(200, 245, 230, 115)
+		        // centered cv::Rect(200, 245, 230, 115)
                 cv::Rect regionOfInterestYellow = cv::Rect(350, 245, 230, 115);
                 cv::Rect regionOfInterestBlue = cv::Rect(125, 245, 230, 115);
                 cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
@@ -139,12 +139,62 @@ int32_t main(int32_t argc, char **argv) {
                 cv::Mat detectBlueImg;
                 cv::inRange(hsvBlueImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectBlueImg);
 
+            //Applying Gaussian blur to detectBlueImg
+                cv::GaussianBlur(detectBlueImg, detectBlueImg, cv::Size(5, 5), 0);
+
+            //Applying dilate and erode to detectBlueImg to remove holes from foreground
+                cv::dilate(detectBlueImg, detectBlueImg, 0);
+                cv::erode(detectBlueImg, detectBlueImg, 0);
+
+            //Applying erode and dilate to detectBlueImg to remove small objects from foreground
+                cv::erode(detectBlueImg, detectBlueImg, 0);
+                cv::dilate(detectBlueImg, detectBlueImg, 0);
+
+            // The below will find the contours of the cones in detectBlueImg and store them in a vector
+                std::vector<std::vector<cv::Point> > blueContours;
+                std::vector<cv::Vec4i> blueHierarchy;
+                cv::findContours(detectBlueImg, blueContours, blueHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+
+            // The below will draw the cone contours onto detectBlueImg (copied code from opencv doc)
+                int idx = 0;
+                cv::Mat blueContourImage = cv::Mat::zeros(detectBlueImg.rows, detectBlueImg.cols, CV_8UC3);
+                for( ; idx >=0; idx = blueHierarchy[idx][0]) {
+                    cv::Scalar colour( 255, 255, 0);
+                    // 2 draws the outline of the cones. Replacing this with -1 would fill in the cone shape
+                    cv::drawContours(blueContourImage, blueContours, idx, colour, 2, 8, blueHierarchy );
+                }
+
 		 // Operation to find yellow cones in HSV image
 	         // cv::Rect(300, 245, 230, 115) "good" for yellow
-                cv::Mat hsvYellowImg;
+               cv::Mat hsvYellowImg;
                 cv::cvtColor(imageWithRegionYellow, hsvYellowImg, cv::COLOR_BGR2HSV);
                 cv::Mat detectYellowImg;
                 cv::inRange(hsvYellowImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectYellowImg);
+
+             //Applying Gaussian blur to detectYellowImg
+                cv::GaussianBlur(detectYellowImg, detectYellowImg, cv::Size(5, 5), 0);
+
+             //Applying dilate and erode to detectYellowImg to remove holes from foreground
+                cv::dilate(detectYellowImg, detectYellowImg, 0);
+                cv::erode(detectYellowImg, detectYellowImg, 0);
+
+             //Applying erode and dilate to detectYellowImg to remove small objects from foreground
+                cv::erode(detectYellowImg, detectYellowImg, 0);
+                cv::dilate(detectYellowImg, detectYellowImg, 0);
+
+            // The below will find the contours of the cones in detectYellowImg and store them in a vector
+                std::vector<std::vector<cv::Point> > yellowContours;
+                std::vector<cv::Vec4i> yellowHierarchy;
+                cv::findContours(detectYellowImg, yellowContours, yellowHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+
+            // The below will draw the cone contours onto detectYellowImg (copied code from opencv doc)
+                int idx2 = 0;
+                cv::Mat yellowContourImage = cv::Mat::zeros(detectYellowImg.rows, detectYellowImg.cols, CV_8UC3);
+                for( ; idx2 >=0; idx2 = yellowHierarchy[idx2][0]) {
+                    cv::Scalar colour( 255, 255, 0);
+                    // 2 draws the outline of the cones. Replacing this with -1 would fill in the cone shape
+                    cv::drawContours(yellowContourImage, yellowContours, idx2, colour, 2, 8, yellowHierarchy );
+                }
 
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
@@ -180,8 +230,8 @@ int32_t main(int32_t argc, char **argv) {
 
                 // Display image on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), detectBlueImg);
-		    //cv::imshow(sharedMemory->name().c_str(), detectYellowImg);
+                    cv::imshow(sharedMemory->name().c_str(), blueContourImage);
+		    //cv::imshow(sharedMemory->name().c_str(), yellowContourImage);
                     cv::waitKey(1);
                 }
             }
