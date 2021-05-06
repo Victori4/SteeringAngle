@@ -31,9 +31,9 @@ int32_t main(int32_t argc, char **argv) {
     // Parse the command line parameters as we require the user to specify some mandatory information on startup.
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
     if ( (0 == commandlineArguments.count("cid")) ||
-       (0 == commandlineArguments.count("name")) ||
-       (0 == commandlineArguments.count("width")) ||
-       (0 == commandlineArguments.count("height")) ) {
+     (0 == commandlineArguments.count("name")) ||
+     (0 == commandlineArguments.count("width")) ||
+     (0 == commandlineArguments.count("height")) ) {
         std::cerr << argv[0] << " attaches to a shared memory area containing an ARGB image." << std::endl;
     std::cerr << "Usage:   " << argv[0] << " --cid=<OD4 session> --name=<name of shared memory area> [--verbose]" << std::endl;
     std::cerr << "         --cid:    CID of the OD4Session to send and receive messages" << std::endl;
@@ -93,16 +93,15 @@ else {
         int frameSampleSize = 5;
 
         // value may need to be changed depending on threshold and our performance
-        int identifiedShape = 150;
+        int identifiedShape = 72;
 
         // flag to check if blue cones have been detected
         int blueConeExists = 0;
-        int blueConeCenter = 0;
-        int yellowConeCenter = 0;
-        double increment = 0.0025;
-        double steeringWheelAngle = 0.0;
-        double steeringMax = 0.290888;
-        double steeringMin = -0.290888;
+        
+        float increment = 0.025;
+        float steeringWheelAngle = 0.0;
+        float steeringMax = 0.3;
+        float steeringMin = -0.3;
 
         cv::Mat leftContourImage;
 
@@ -234,6 +233,7 @@ else {
             cv::findContours(detectCenterImg, blueContours, blueHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
             cv::Mat blueContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
+            int blueConeCenter = 0;
 
             for (unsigned int i = 0; i < blueContours.size(); i++){
 
@@ -241,84 +241,96 @@ else {
                 {
                     cv::Scalar colour( 255, 255, 0);
                     cv::drawContours(blueContourImage, blueContours, i, colour, -1, 8, blueHierarchy );
-                    blueConeCenter = 1;
+                    
 
-                    if (steeringWheelAngle > steeringMin && steeringWheelAngle < steeringMax)
+                    if (steeringWheelAngle >= steeringMin && steeringWheelAngle <= steeringMax)
                     {
 
                     // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
-                        if (blueConeCenter == 1 && carDirection == 1 ) 
+                        if (blueConeCenter != 1 && carDirection == 1 ) 
                         {
-                           steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
-                           std::cout << "line 253 " << steeringWheelAngle << std::endl;
+                         blueConeCenter = 1;
+                         steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
+                           //std::cout << "line 253 " << steeringWheelAngle << std::endl;
 
-                       } else if (blueConeCenter == 1 && carDirection == -1) {
-                           steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
-                           std::cout << "line 257 " << steeringWheelAngle << std::endl;
-                       }
+                     } else if (blueConeCenter != 1 && carDirection == -1) {
+                         blueConeCenter = 1;
+                         steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
+                           //std::cout << "line 257 " << steeringWheelAngle << std::endl;
+                     }
 
-                   }
+                 } else
+                 {
+                    steeringWheelAngle = 0.0;
+                    std::cout << "line 265 " << steeringWheelAngle << std::endl;
+                }
 
-               }
-           }
+            }
+        }
 
-       //  if (blueConeCenter != 1) {
 
-           cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
-           cv::inRange(hsvCenterImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectCenterImg);
+        if (blueConeCenter != 1) {
+
+         cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
+         cv::inRange(hsvCenterImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectCenterImg);
 
     //Applying Gaussian blur to detectCenterImg
-           cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
+         cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
 
     //Applying dilate and erode to detectCenterImg to remove holes from foreground
-           cv::dilate(detectCenterImg, detectCenterImg, 0);
-           cv::erode(detectCenterImg, detectCenterImg, 0);
+         cv::dilate(detectCenterImg, detectCenterImg, 0);
+         cv::erode(detectCenterImg, detectCenterImg, 0);
 
     //Applying erode and dilate to detectBlueImg to remove small objects from foreground
-           cv::erode(detectCenterImg, detectCenterImg, 0);
-           cv::dilate(detectCenterImg, detectCenterImg, 0);
+         cv::erode(detectCenterImg, detectCenterImg, 0);
+         cv::dilate(detectCenterImg, detectCenterImg, 0);
 
     // The below will find the contours of the cones in detectBlueImg and store them in a vector
-           std::vector<std::vector<cv::Point> > yellowContours;
-           std::vector<cv::Vec4i> yellowHierarchy;
-           cv::findContours(detectCenterImg, yellowContours, yellowHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+         std::vector<std::vector<cv::Point> > yellowContours;
+         std::vector<cv::Vec4i> yellowHierarchy;
+         cv::findContours(detectCenterImg, yellowContours, yellowHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
-           cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
+         cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
+         int yellowConeCenter = 0;
 
-           for (unsigned int i = 0; i < yellowContours.size(); i++){
+         for (unsigned int i = 0; i < yellowContours.size(); i++){
 
             if (cv::contourArea(yellowContours[i]) > identifiedShape)
             {
                 cv::Scalar colour( 255, 255, 0);
                 cv::drawContours(yellowContourImage, yellowContours, i, colour, -1, 8, yellowHierarchy);
-                yellowConeCenter = 1;
+                
 
-
-                if (steeringWheelAngle > steeringMin && steeringWheelAngle < steeringMax)
+                if (steeringWheelAngle >= steeringMin && steeringWheelAngle <= steeringMax)
                 {
 
                     // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
-                    if (yellowConeCenter == 1 && carDirection == 1) 
-                    {
-                       steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
-                       std::cout << "line 307 " << steeringWheelAngle << std::endl;
+                if (yellowConeCenter != 1 && carDirection == 1) 
+                {
+                 yellowConeCenter = 1;
+                 steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
+                       //std::cout << "line 307 " << steeringWheelAngle << std::endl;
 
-                   } else if (yellowConeCenter == 1 && carDirection == -1) {
-                    steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
-                    std::cout << "line 312 " << steeringWheelAngle << std::endl;
-                }
-
+             } else if (yellowConeCenter != 1 && carDirection == -1) {
+                yellowConeCenter = 1;
+                steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
+                    //std::cout << "line 312 " << steeringWheelAngle << std::endl;
+            } else
+            {
+                steeringWheelAngle = 0.0;
+                std::cout << "line 320 " << steeringWheelAngle << std::endl;
             }
 
         }
     }   
-//}
-    if (yellowConeCenter == 0 && blueConeCenter == 0)
+}
+   /* if (yellowConeCenter == 0 && blueConeCenter == 0)
     {
-        steeringWheelAngle = 0.0;
+        steeringWheelAngle = 0.01;
         std::cout << "line 303 " << steeringWheelAngle << std::endl;
-    }
+    }*/
 
+}
 }
 
                 // Add current UTC time
@@ -351,7 +363,7 @@ else {
                 {
                     std::lock_guard<std::mutex> lck(gsrMutex);
                     // std::cout << "group_16;" << " sampleTimeStamp in microseconds: " << sMicro << " steeringWheelAngle: " << steeringWheelAngle << "Car direction: " << carDirection << "Frame Counter: " << frameCounter << std::endl;
-                    std::cout << "our angle: " << steeringWheelAngle << " real angle: " << gsr.groundSteering() << std::endl;
+                    std::cout << sMicro << ";" << steeringWheelAngle << std::endl;
                 }
 
                 // Display image on your screen.
