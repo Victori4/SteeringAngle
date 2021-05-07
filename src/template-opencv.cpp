@@ -105,6 +105,17 @@ else {
 
         cv::Mat leftContourImage;
 
+        std::vector<std::vector<cv::Point> > contours;
+        std::vector<cv::Vec4i> hierarchy;
+
+        //     // The below will find the contours of the cones in detectBlueImg and store them in a vector
+        // std::vector<std::vector<cv::Point> > blueContours;
+        // std::vector<cv::Vec4i> blueHierarchy;
+
+        //     // The below will find the contours of the cones in detectBlueImg and store them in a vector
+        // std::vector<std::vector<cv::Point> > yellowContours;
+        // std::vector<cv::Vec4i> yellowHierarchy;
+
 
     // Endless loop; end the program by pressing Ctrl-C.
         while (od4.isRunning()) {
@@ -179,20 +190,19 @@ else {
             cv::dilate(detectLeftImg, detectLeftImg, 0);
 
     // The below will find the contours of the cones in detectBlueImg and store them in a vector
-            std::vector<std::vector<cv::Point> > leftContours;
-            std::vector<cv::Vec4i> leftHierarchy;
-            cv::findContours(detectLeftImg, leftContours, leftHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+
+            cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
     // The below will draw the cone contours onto detectBlueImg (copied code from opencv doc)
 
             leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
 
-            for (unsigned int i = 0; i < leftContours.size(); i++){
+            for (unsigned int i = 0; i < contours.size(); i++){
 
-                if (cv::contourArea(leftContours[i]) > identifiedShape )
+                if (cv::contourArea(contours[i]) > identifiedShape )
                 {
                     cv::Scalar colour( 255, 255, 0);
-                    cv::drawContours(leftContourImage, leftContours, i, colour, -1, 8, leftHierarchy );
+                    cv::drawContours(leftContourImage, contours, i, colour, -1, 8, hierarchy );
                     blueConeExists = 1;
 
                     // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
@@ -227,20 +237,18 @@ else {
             cv::erode(detectCenterImg, detectCenterImg, 0);
             cv::dilate(detectCenterImg, detectCenterImg, 0);
 
-    // The below will find the contours of the cones in detectBlueImg and store them in a vector
-            std::vector<std::vector<cv::Point> > blueContours;
-            std::vector<cv::Vec4i> blueHierarchy;
-            cv::findContours(detectCenterImg, blueContours, blueHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+
+            cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
             cv::Mat blueContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
             int blueConeCenter = 0;
 
-            for (unsigned int i = 0; i < blueContours.size(); i++){
+            for (unsigned int i = 0; i < contours.size(); i++){
 
-                if (cv::contourArea(blueContours[i]) > identifiedShape )
+                if (cv::contourArea(contours[i]) > identifiedShape )
                 {
                     cv::Scalar colour( 255, 255, 0);
-                    cv::drawContours(blueContourImage, blueContours, i, colour, -1, 8, blueHierarchy );
+                    cv::drawContours(blueContourImage, contours, i, colour, -1, 8, hierarchy );
                     
 
                     if (steeringWheelAngle >= steeringMin && steeringWheelAngle <= steeringMax)
@@ -285,45 +293,43 @@ else {
          cv::erode(detectCenterImg, detectCenterImg, 0);
          cv::dilate(detectCenterImg, detectCenterImg, 0);
 
-    // The below will find the contours of the cones in detectBlueImg and store them in a vector
-         std::vector<std::vector<cv::Point> > yellowContours;
-         std::vector<cv::Vec4i> yellowHierarchy;
-         cv::findContours(detectCenterImg, yellowContours, yellowHierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+
+         cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
          cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
          int yellowConeCenter = 0;
 
-         for (unsigned int i = 0; i < yellowContours.size(); i++){
+         for (unsigned int i = 0; i < contours.size(); i++){
 
-            if (cv::contourArea(yellowContours[i]) > identifiedShape)
+            if (cv::contourArea(contours[i]) > identifiedShape)
             {
                 cv::Scalar colour( 255, 255, 0);
-                cv::drawContours(yellowContourImage, yellowContours, i, colour, -1, 8, yellowHierarchy);
+                cv::drawContours(yellowContourImage, contours, i, colour, -1, 8, hierarchy);
                 
 
                 if (steeringWheelAngle >= steeringMin && steeringWheelAngle <= steeringMax)
                 {
 
                     // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
-                if (yellowConeCenter != 1 && carDirection == 1) 
-                {
-                 yellowConeCenter = 1;
-                 steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
+                    if (yellowConeCenter != 1 && carDirection == 1) 
+                    {
+                     yellowConeCenter = 1;
+                     steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
                        //std::cout << "line 307 " << steeringWheelAngle << std::endl;
 
-             } else if (yellowConeCenter != 1 && carDirection == -1) {
-                yellowConeCenter = 1;
-                steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
+                 } else if (yellowConeCenter != 1 && carDirection == -1) {
+                    yellowConeCenter = 1;
+                    steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
                     //std::cout << "line 312 " << steeringWheelAngle << std::endl;
-            } else
-            {
-                steeringWheelAngle = 0.0;
-                std::cout << "line 320 " << steeringWheelAngle << std::endl;
-            }
+                } else
+                {
+                    steeringWheelAngle = 0.0;
+                    std::cout << "line 320 " << steeringWheelAngle << std::endl;
+                }
 
-        }
-    }   
-}
+            }
+        }   
+    }
    /* if (yellowConeCenter == 0 && blueConeCenter == 0)
     {
         steeringWheelAngle = 0.01;
