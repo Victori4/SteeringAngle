@@ -105,6 +105,10 @@ else {
         float steeringMax = 0.3;
         float steeringMin = -0.3;
 
+        // Variables for turning
+        float carTurnR = 0.025;
+        float carTurnL = -0.025;
+
         cv::Mat leftContourImage;
 
         std::vector<std::vector<cv::Point> > contours;
@@ -225,10 +229,10 @@ else {
         }
 
         // If verbose is included in the command line, a window containing img pops up
-        if (VERBOSE) {
+        /*if (VERBOSE) {
             cv::imshow("Video", img);
             cv::waitKey(1);
-        }
+        }*/
 
         // If frameCounter is larger than or equal to frameSampleSize
         if (frameCounter >= frameSampleSize) {
@@ -278,34 +282,39 @@ else {
                         // Set blueConeCenter as 1 because it has detected a cone 
                          blueConeCenter = 1;
                          // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
-                         steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
-                           //std::cout << "line 253 " << steeringWheelAngle << std::endl;
+                         //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
+                         //steeringWheelAngle = steeringWheelAngle + carTurnR;
+                         steeringWheelAngle = steeringWheelAngle -carTurnL;
+                        std::cout << "line 288 " << steeringWheelAngle << std::endl;
 
                      } // If a blue cone has not been detected yet AND car direction is counterclockwise
                      else if (blueConeCenter != 1 && carDirection == -1) {
                         // Set blueConeCenter as 1 because it has detected a cone 
                          blueConeCenter = 1;
                          // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
-                         steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
-                           //std::cout << "line 257 " << steeringWheelAngle << std::endl;
+                         //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
+                         //steeringWheelAngle = steeringWheelAngle - carTurnL;
+                         steeringWheelAngle = steeringWheelAngle + carTurnR;
+                        std::cout << "line 298 " << steeringWheelAngle << std::endl;
                      }
 
                  } // If the current steering angle is less than steeringMin or more than steeringMax 
                  else
                  {
                     // Set steeringWheelAngle to 0 (go straight, no new steering angle provided by driver)
+                    blueConeCenter = 1;
                     steeringWheelAngle = 0.0;
-                    std::cout << "line 265 " << steeringWheelAngle << std::endl;
+                    std::cout << "line 306 " << steeringWheelAngle << std::endl;
                 }
 
             }
         }
 
          // If verbose is included in the command line, a window showing only the blue contours will appear
-            if (VERBOSE) {
+          /*  if (VERBOSE) {
                 cv::imshow("Blue", blueContourImage);
                 cv::waitKey(1);
-            }
+            }*/
 
         // If a blue cone hasn't been detected, we check for yellow cones
         if (blueConeCenter != 1) {
@@ -354,39 +363,44 @@ else {
                     // Set yellowConeCenter as 1 because it has detected a cone
                      yellowConeCenter = 1;
                      // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
-                     steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
-                       //std::cout << "line 307 " << steeringWheelAngle << std::endl;
+                     //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
+                     //steeringWheelAngle = steeringWheelAngle + carTurnL;
+                      steeringWheelAngle = steeringWheelAngle - carTurnR;
+                        std::cout << "line 368 " << steeringWheelAngle << std::endl;
 
                  } // If a yellow cone has not been detected yet AND car direction is counterclockwise 
                  else if (yellowConeCenter != 1 && carDirection == -1) {
                     // Set yellowConeCenter as 1 because it has detected a cone
                     yellowConeCenter = 1;
                     // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
-                    steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
-                    //std::cout << "line 312 " << steeringWheelAngle << std::endl;
+                    //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
+                    //steeringWheelAngle = steeringWheelAngle - carTurnR;
+                    steeringWheelAngle = steeringWheelAngle + carTurnL;
+                    std::cout << "line 378 " << steeringWheelAngle << std::endl;
                 }
 
             } // If the current steering angle is less than steeringMin or more than steeringMax
             else
                 {
                     // Set steeringWheelAngle to 0 (go straight, no new steering angle provided by driver)
+                    yellowConeCenter = 1;
                     steeringWheelAngle = 0.0;
-                    std::cout << "line 320 " << steeringWheelAngle << std::endl;
+                    std::cout << "line 386 " << steeringWheelAngle << std::endl;
                 }
             }   
         }
 
         // If verbose is included in the command line, a window showing only the yellow contours will appear
-        if (VERBOSE) {
+        /*if (VERBOSE) {
             cv::imshow("Yellow", yellowContourImage);
             cv::waitKey(1);
-        }
+        }*/
     // If no blue or yellow cones have been detected
     if (yellowConeCenter == 0 && blueConeCenter == 0)
     {
         // If no cones are present, the steeringWheelAngle is set to 0
         steeringWheelAngle = 0.00;
-        std::cout << "line 303 " << steeringWheelAngle << std::endl;
+        std::cout << "line 401 " << steeringWheelAngle << std::endl;
     }
 
 }
