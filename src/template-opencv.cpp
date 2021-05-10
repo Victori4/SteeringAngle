@@ -70,13 +70,15 @@ else {
 
         od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
 
-// HSV values
+    // HSV values for blue
         int minHueBlue = 102;
         int maxHueBlue = 150;
         int minSatBlue = 88;
         int maxSatBlue = 165;
         int minValueBlue = 43;
         int maxValueBlue = 222;
+
+    //HSV values for yellow
 
         int minHueYellow = 0;
         int maxHueYellow = 46;
@@ -85,7 +87,7 @@ else {
         int minValueYellow = 104;
         int maxValueYellow = 255;
 
-        int frameCounter = 0;
+        int frameCounter = 0; // 
 
 // left car direction is negative (counter clockwise), default value
         int carDirection = -1;
@@ -119,7 +121,7 @@ else {
 
     // Endless loop; end the program by pressing Ctrl-C.
         while (od4.isRunning()) {
-
+            // Increase the frameCounter variable to get our sample frames for carDirection
             frameCounter++;
         // OpenCV data structure to hold an image.
             cv::Mat img;
@@ -143,132 +145,155 @@ else {
        // Convert TimeStamp obj into microseconds
         int64_t sMicro = cluon::time::toMicroseconds(sTime.second);
 
+        // Adds the numbers to a buffer for the full timestamp to be printed
         char buffer[25];
         std::sprintf(buffer, "ts: %ld; ", sMicro); 
         //std::cout << buffer;
 
+        //Shared memory is unlocked
         sharedMemory->unlock();
 
         // TODO: Do something with the frame.
-        // Example: Draw a red rectangle and display image.
         
-        cv::rectangle(img, cv::Rect(80, 235, 125, 100), cv::Scalar(0,0,255));
-        cv::rectangle(img, cv::Rect(200, 245, 230, 115), cv::Scalar(255,255,255));
+        // Drawing rectangles to test the placement of the regions of interest
+        //cv::rectangle(img, cv::Rect(80, 235, 125, 100), cv::Scalar(0,0,255));
+        //cv::rectangle(img, cv::Rect(200, 245, 230, 115), cv::Scalar(255,255,255));
 
-        // Cutting a region of interest
-        // centered cv::Rect(200, 245, 230, 115)
-
+        // Defining the regions of interest for both centre and left
         cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
         cv::Rect regionOfInterestLeft = cv::Rect(80, 235, 125, 100);
+
+        // Creating images with the defined regions of interest
         cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
         cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
+
+        // Defining images for later use
         cv::Mat hsvLeftImg;
         cv::Mat hsvCenterImg;
         cv::Mat detectLeftImg;
         cv::Mat detectCenterImg;
         
 
-            // loop runs until frame counter is greater than the sample size of 5
-
+        // loop runs until frame counter is greater than the sample size of 5
         if (frameCounter < frameSampleSize)
         {
 
         // Operation to find blue cones in HSV image
-// maybe good for blue cv::Rect(125, 245, 230, 115)
+            // Converts the imageWithRegionLeft image to HSV values and stores the result in hsvLeftImg
             cv::cvtColor(imageWithRegionLeft, hsvLeftImg, cv::COLOR_BGR2HSV);
+            // Applying our defined HSV values as thresholds to hsvLeftImg to create a new detectLeftImg
             cv::inRange(hsvLeftImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectLeftImg);
 
-    //Applying Gaussian blur to detectBlueImg
+        //Applying Gaussian blur to detectLeftImg
             cv::GaussianBlur(detectLeftImg, detectLeftImg, cv::Size(5, 5), 0);
 
-    //Applying dilate and erode to detectBlueImg to remove holes from foreground
+        //Applying dilate and erode to detectLeftImg to remove holes from foreground
             cv::dilate(detectLeftImg, detectLeftImg, 0);
             cv::erode(detectLeftImg, detectLeftImg, 0);
 
-    //Applying erode and dilate to detectBlueImg to remove small objects from foreground
+        //Applying erode and dilate to detectLeftImg to remove small objects from foreground
             cv::erode(detectLeftImg, detectLeftImg, 0);
             cv::dilate(detectLeftImg, detectLeftImg, 0);
 
-    // The below will find the contours of the cones in detectBlueImg and store them in a vector
+        // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
+           cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
-            cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+           // Creates a mat object of the same size as detectLeftImg used for storing the drawn contours
+           leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
 
-    // The below will draw the cone contours onto detectBlueImg (copied code from opencv doc)
-
-            leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
-
+           // Loops over the contours vector
             for (unsigned int i = 0; i < contours.size(); i++){
 
+                // If the current index of the vector has a contour area that is larger than the defined number of pixels in identifiedShape, we have a cone
                 if (cv::contourArea(contours[i]) > identifiedShape )
                 {
+                    // Draws the contour of the cone on the image
                     cv::Scalar colour( 255, 255, 0);
-                    cv::drawContours(leftContourImage, contours, i, colour, -1, 8, hierarchy );
+                    cv::drawContours(leftContourImage, contours, i, colour, -1, 8, hierarchy);
+                    // Set blueConeExists flag to 1 to indicate that we have found a flag
                     blueConeExists = 1;
 
-                    // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
+                    //If blue cones are detected, that means the car direction is clockwise and the carDirection must be set as 1
                     if (blueConeExists == 1) 
                     {
                         carDirection = 1;
                     }
                 }
             }
-            std::cout << "frame counter" << frameCounter;
+            // Frame counter printed for testing purposes
+            //std::cout << "frame counter" << frameCounter;
         }
 
+        // If verbose is included in the command line, a window containing img pops up
         if (VERBOSE) {
             cv::imshow("Video", img);
-            //cv::imshow(sharedMemory->name().c_str(), yellowContourImage);
             cv::waitKey(1);
         }
 
-
+        // If frameCounter is larger than or equal to frameSampleSize
         if (frameCounter >= frameSampleSize) {
+
+            // Converts the imageWithRegionCentre image to HSV values and stores the result in hsvCenterImg
             cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
+
+            // Applying our defined HSV values as thresholds to hsvCenterImg to create a new detectCenterImg
             cv::inRange(hsvCenterImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectCenterImg);
 
-    //Applying Gaussian blur to detectCenterImg
+            //Applying Gaussian blur to detectCenterImg
             cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
 
-    //Applying dilate and erode to detectCenterImg to remove holes from foreground
+            //Applying dilate and erode to detectCenterImg to remove holes from foreground
             cv::dilate(detectCenterImg, detectCenterImg, 0);
             cv::erode(detectCenterImg, detectCenterImg, 0);
 
-    //Applying erode and dilate to detectBlueImg to remove small objects from foreground
+            //Applying erode and dilate to detectBlueImg to remove small objects from foreground
             cv::erode(detectCenterImg, detectCenterImg, 0);
             cv::dilate(detectCenterImg, detectCenterImg, 0);
 
-
+            // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
             cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
-
+            
+            // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
             cv::Mat blueContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
-            int blueConeCenter = 0;
 
-            for (unsigned int i = 0; i < contours.size(); i++){
-
+            int blueConeCenter = 0; // Flag for whether blue cones are detected in the image
+            
+            // Loops over the contours vector
+            for (unsigned int i = 0; i < contours.size(); i++) {
+                
+                // If the current index of the vector has a contour area that is larger than the defined number of pixels in identifiedShape, we have a cone
                 if (cv::contourArea(contours[i]) > identifiedShape )
                 {
+                    // Draws the contour of the cone on the image
                     cv::Scalar colour( 255, 255, 0);
-                    cv::drawContours(blueContourImage, contours, i, colour, -1, 8, hierarchy );
+                    cv::drawContours(blueContourImage, contours, i, colour, -1, 8, hierarchy);
                     
-
+                    // If the current steeringWheelAngle is more than or equal to steeringMin AND less than or equal to steeringMax 
                     if (steeringWheelAngle >= steeringMin && steeringWheelAngle <= steeringMax)
                     {
 
-                    // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
+                    // If a blue cone has not been detected yet AND car direction is clockwise
                         if (blueConeCenter != 1 && carDirection == 1 ) 
                         {
+                        // Set blueConeCenter as 1 because it has detected a cone 
                          blueConeCenter = 1;
+                         // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
                          steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
                            //std::cout << "line 253 " << steeringWheelAngle << std::endl;
 
-                     } else if (blueConeCenter != 1 && carDirection == -1) {
+                     } // If a blue cone has not been detected yet AND car direction is counterclockwise
+                     else if (blueConeCenter != 1 && carDirection == -1) {
+                        // Set blueConeCenter as 1 because it has detected a cone 
                          blueConeCenter = 1;
+                         // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
                          steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
                            //std::cout << "line 257 " << steeringWheelAngle << std::endl;
                      }
 
-                 } else
+                 } // If the current steering angle is less than steeringMin or more than steeringMax 
+                 else
                  {
+                    // Set steeringWheelAngle to 0 (go straight, no new steering angle provided by driver)
                     steeringWheelAngle = 0.0;
                     std::cout << "line 265 " << steeringWheelAngle << std::endl;
                 }
@@ -276,69 +301,96 @@ else {
             }
         }
 
+         // If verbose is included in the command line, a window showing only the blue contours will appear
+            if (VERBOSE) {
+                cv::imshow("Blue", blueContourImage);
+                cv::waitKey(1);
+            }
 
+        // If a blue cone hasn't been detected, we check for yellow cones
         if (blueConeCenter != 1) {
 
+        // Converts the imageWithRegionCentre image to HSV values and stores the result in hsvCenterImg
          cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
+
+         // Applying our defined HSV values as thresholds to hsvCenterImg to create a new detectCenterImg
          cv::inRange(hsvCenterImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectCenterImg);
 
-    //Applying Gaussian blur to detectCenterImg
+        //Applying Gaussian blur to detectCenterImg
          cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
 
-    //Applying dilate and erode to detectCenterImg to remove holes from foreground
+        //Applying dilate and erode to detectCenterImg to remove holes from foreground
          cv::dilate(detectCenterImg, detectCenterImg, 0);
          cv::erode(detectCenterImg, detectCenterImg, 0);
 
-    //Applying erode and dilate to detectBlueImg to remove small objects from foreground
+        //Applying erode and dilate to detectBlueImg to remove small objects from foreground
          cv::erode(detectCenterImg, detectCenterImg, 0);
          cv::dilate(detectCenterImg, detectCenterImg, 0);
 
-
+        // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
          cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
+         // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
          cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
-         int yellowConeCenter = 0;
 
-         for (unsigned int i = 0; i < contours.size(); i++){
-
+         int yellowConeCenter = 0; // Flag for whether yellow cones are detected in the image
+        
+        // Loops over the contours vector
+         for (unsigned int i = 0; i < contours.size(); i++) {
+            // If the current index of the vector has a contour area that is larger than the defined number of pixels in identifiedShape, we have a cone
             if (cv::contourArea(contours[i]) > identifiedShape)
             {
+                // Draws the contour of the cone on the image
                 cv::Scalar colour( 255, 255, 0);
                 cv::drawContours(yellowContourImage, contours, i, colour, -1, 8, hierarchy);
                 
-
+                // If the current steeringWheelAngle is more than or equal to steeringMin AND less than or equal to steeringMax
                 if (steeringWheelAngle >= steeringMin && steeringWheelAngle <= steeringMax)
                 {
 
-                    // if no blue cones are detected that means the car direction is counter clockwise, which means the steering angle needs to be inverted and car direction is made negative
+                     // If a yellow cone has not been detected yet AND car direction is clockwise
                     if (yellowConeCenter != 1 && carDirection == 1) 
                     {
+                    // Set yellowConeCenter as 1 because it has detected a cone
                      yellowConeCenter = 1;
+                     // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
                      steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
                        //std::cout << "line 307 " << steeringWheelAngle << std::endl;
 
-                 } else if (yellowConeCenter != 1 && carDirection == -1) {
+                 } // If a yellow cone has not been detected yet AND car direction is counterclockwise 
+                 else if (yellowConeCenter != 1 && carDirection == -1) {
+                    // Set yellowConeCenter as 1 because it has detected a cone
                     yellowConeCenter = 1;
+                    // We know this is wrong because it constantly swings between positive and negative every time we find a steering angle
                     steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
                     //std::cout << "line 312 " << steeringWheelAngle << std::endl;
-                } else
+                }
+
+            } // If the current steering angle is less than steeringMin or more than steeringMax
+            else
                 {
+                    // Set steeringWheelAngle to 0 (go straight, no new steering angle provided by driver)
                     steeringWheelAngle = 0.0;
                     std::cout << "line 320 " << steeringWheelAngle << std::endl;
                 }
+            }   
+        }
 
-            }
-        }   
-    }
-   /* if (yellowConeCenter == 0 && blueConeCenter == 0)
+        // If verbose is included in the command line, a window showing only the yellow contours will appear
+        if (VERBOSE) {
+            cv::imshow("Yellow", yellowContourImage);
+            cv::waitKey(1);
+        }
+    // If no blue or yellow cones have been detected
+    if (yellowConeCenter == 0 && blueConeCenter == 0)
     {
-        steeringWheelAngle = 0.01;
+        // If no cones are present, the steeringWheelAngle is set to 0
+        steeringWheelAngle = 0.00;
         std::cout << "line 303 " << steeringWheelAngle << std::endl;
-    }*/
+    }
 
 }
 }
-
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
                 cluon::data::TimeStamp time = cluon::time::now(); // Saves current time to var
@@ -375,7 +427,6 @@ else {
                 // Display image on your screen.
                 if (VERBOSE) {
                     cv::imshow(sharedMemory->name().c_str(), leftContourImage);
-            //cv::imshow(sharedMemory->name().c_str(), yellowContourImage);
                     cv::waitKey(1);
                 }
 
