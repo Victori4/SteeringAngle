@@ -26,6 +26,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <sstream>
+
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{1};
     // Parse the command line parameters as we require the user to specify some mandatory information on startup.
@@ -91,7 +93,7 @@ else {
 
 // left car direction is negative (counter clockwise), default value
         int carDirection = -1;
-       // int makeNegative = -1;
+        // int makeNegative = -1;
         int frameSampleSize = 5;
 
         // value may need to be changed depending on threshold and our performance
@@ -100,7 +102,7 @@ else {
         // flag to check if blue cones have been detected
         int blueConeExists = 0;
         
-       // float increment = 0.025;
+        // float increment = 0.025;
         float steeringWheelAngle = 0.0;
         float steeringMax = 0.3;
         float steeringMin = -0.3;
@@ -147,11 +149,11 @@ else {
         std::pair<bool, cluon::data::TimeStamp> sTime = sharedMemory->getTimeStamp(); // Saving current time in sTime var
 
        // Convert TimeStamp obj into microseconds
-        int64_t sMicro = cluon::time::toMicroseconds(sTime.second);
-
+        uint64_t sMicro = cluon::time::toMicroseconds(sTime.second);
+        
         // Adds the numbers to a buffer for the full timestamp to be printed
-        char buffer[25];
-        std::sprintf(buffer, "Time Stamp: %ld; ", sMicro); 
+        // char buffer[25];
+        //std::sprintf(buffer, " Time stamp: %ld; ", sMicro); 
         //std::cout << buffer;
 
         //Shared memory is unlocked
@@ -196,8 +198,8 @@ else {
             cv::erode(detectLeftImg, detectLeftImg, 0);
 
         //Applying erode and dilate to detectLeftImg to remove small objects from foreground
-            // cv::erode(detectLeftImg, detectLeftImg, 0);
-            // cv::dilate(detectLeftImg, detectLeftImg, 0);
+            //cv::erode(detectLeftImg, detectLeftImg, 0);
+            //cv::dilate(detectLeftImg, detectLeftImg, 0);
 
         // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
            cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
@@ -251,8 +253,8 @@ else {
             cv::erode(detectCenterImg, detectCenterImg, 0);
 
             //Applying erode and dilate to detectBlueImg to remove small objects from foreground
-            // cv::erode(detectCenterImg, detectCenterImg, 0);
-            // cv::dilate(detectCenterImg, detectCenterImg, 0);
+            //cv::erode(detectCenterImg, detectCenterImg, 0);
+            //cv::dilate(detectCenterImg, detectCenterImg, 0);
 
             // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
             cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
@@ -285,7 +287,7 @@ else {
                          //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
                          //steeringWheelAngle = steeringWheelAngle + carTurnR;
                          steeringWheelAngle = steeringWheelAngle -carTurnL;
-                       // std::cout << "line 288 " << steeringWheelAngle << std::endl;
+                        //std::cout << "line 288 " << steeringWheelAngle << std::endl;
 
                      } // If a blue cone has not been detected yet AND car direction is counterclockwise
                      else if (blueConeCenter != 1 && carDirection == -1) {
@@ -295,7 +297,7 @@ else {
                          //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
                          //steeringWheelAngle = steeringWheelAngle - carTurnL;
                          steeringWheelAngle = steeringWheelAngle + carTurnR;
-                       // std::cout << "line 298 " << steeringWheelAngle << std::endl;
+                        //std::cout << "line 298 " << steeringWheelAngle << std::endl;
                      }
 
                  } // If the current steering angle is less than steeringMin or more than steeringMax 
@@ -304,7 +306,7 @@ else {
                     // Set steeringWheelAngle to 0 (go straight, no new steering angle provided by driver)
                     blueConeCenter = 1;
                     steeringWheelAngle = 0.0;
-                  //  std::cout << "line 306 " << steeringWheelAngle << std::endl;
+                    //std::cout << "line 306 " << steeringWheelAngle << std::endl;
                 }
 
             }
@@ -333,8 +335,8 @@ else {
          cv::erode(detectCenterImg, detectCenterImg, 0);
 
         //Applying erode and dilate to detectBlueImg to remove small objects from foreground
-         // cv::erode(detectCenterImg, detectCenterImg, 0);
-         // cv::dilate(detectCenterImg, detectCenterImg, 0);
+         //cv::erode(detectCenterImg, detectCenterImg, 0);
+         //cv::dilate(detectCenterImg, detectCenterImg, 0);
 
         // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
          cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
@@ -366,7 +368,7 @@ else {
                      //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection;
                      //steeringWheelAngle = steeringWheelAngle + carTurnL;
                       steeringWheelAngle = steeringWheelAngle - carTurnR;
-                        //std::cout << "line 368 " << steeringWheelAngle << std::endl;
+                    // std::cout << "line 368 " << steeringWheelAngle << std::endl;
 
                  } // If a yellow cone has not been detected yet AND car direction is counterclockwise 
                  else if (yellowConeCenter != 1 && carDirection == -1) {
@@ -376,7 +378,7 @@ else {
                     //steeringWheelAngle = (steeringWheelAngle + increment) * carDirection * makeNegative;
                     //steeringWheelAngle = steeringWheelAngle - carTurnR;
                     steeringWheelAngle = steeringWheelAngle + carTurnL;
-                   // std::cout << "line 378 " << steeringWheelAngle << std::endl;
+                    //std::cout << "line 378 " << steeringWheelAngle << std::endl;
                 }
 
             } // If the current steering angle is less than steeringMin or more than steeringMax
@@ -385,7 +387,7 @@ else {
                     // Set steeringWheelAngle to 0 (go straight, no new steering angle provided by driver)
                     yellowConeCenter = 1;
                     steeringWheelAngle = 0.0;
-                   // std::cout << "line 386 " << steeringWheelAngle << std::endl;
+                    //std::cout << "line 386 " << steeringWheelAngle << std::endl;
                 }
             }   
         }
@@ -400,54 +402,56 @@ else {
     {
         // If no cones are present, the steeringWheelAngle is set to 0
         steeringWheelAngle = 0.00;
-       // std::cout << "line 401 " << steeringWheelAngle << std::endl;
+        // std::cout << "line 401 " << steeringWheelAngle << std::endl;
     }
 
 }
 }
                 // Add current UTC time
                 // Ref: https://stackoverflow.com/questions/38686405/convert-time-t-from-localtime-zone-to-utc   
-               // cluon::data::TimeStamp time = cluon::time::now(); // Saves current time to var
-                //int sec = time.seconds(); // Saves current time as int to sec var
-               // std::time_t lt = sec; // Initialize time_t using sec var
+                //cluon::data::TimeStamp time = cluon::time::now(); // Saves current time to var
+               // int sec = time.seconds(); // Saves current time as int to sec var
+                //std::time_t lt = sec; // Initialize time_t using sec var
                 //char buf[30]; // Buffer to hold time
-                //auto utc_field = *std::gmtime(&lt); // Converts local time_t to UTC tm, auto deduces type
+               // auto utc_field = *std::gmtime(&lt); // Converts local time_t to UTC tm, auto deduces type
 
                 // Formats buffer results into string
-                //std::strftime(buf, sizeof(buf), "Now: %FT%TZ; ", &utc_field); 
+               // std::strftime(buf, sizeof(buf), "Now: %FT%TZ; ", &utc_field); 
 
                 // Prints current time in terminal
                 //std::cout << buf; 
-            
 
-               // char buf[30]; // buffer to hold our ground steering angle
+        // creates string stream input, optimized buffer, convert whatever is coming in as string
+                std::ostringstream calcGroundSteering;
+                std::ostringstream actualSteering;
+                std::ostringstream timestamp;
+                
+                // putting values into stream
+                calcGroundSteering << steeringWheelAngle;
+                actualSteering << gsr.groundSteering();
+                timestamp << sMicro;
+                //oss.str();
+
+                // creating strings for printing
+                std::string time = " Time Stamp: ";
+                std::string calculatedGroundSteering = "Calculated Ground Steering: "; // name
+                std::string actualGroundSteering = " Actual Ground Steering: ";
                 std::string groundSteeringAngle = std::to_string(steeringWheelAngle);
 
-                // Concatonating three items into one complete string
-                // std::string message = "Debug Window: "; // name
-                // message.append("Calculated Ground Steering Angle: ");
-                // message.append(groundSteeringAngle);
-              //  message.append("Actual Ground Steering Angle: ");
-               // message.append(std::to_string(gsr.groundSteering()));
-               // message.append(buffer);
-                
-              //  std::string total = groundSteeringAngle.append(buffer); // Concatonates ms and UTC
-               // std::string complete = total.append(std::string(name)); // Concats all info
-
-std::string name = "Debug: "; // name
-std::string total = std::string(groundSteeringAngle).append(buffer); // Concatonates ms and UTC
-std::string complete = total.append(std::string(name)); // Concats all info
-
-
-
-
+                // appending into one string to display
+                calculatedGroundSteering.append(groundSteeringAngle);
+                calculatedGroundSteering.append(calcGroundSteering.str());
+                calculatedGroundSteering.append(actualGroundSteering);
+                calculatedGroundSteering.append(actualSteering.str());
+                calculatedGroundSteering.append(time);
+                calculatedGroundSteering.append(timestamp.str());
 
                 // Displays information on video
                 cv::putText(img, //target image
-                    complete, 
-                    cv::Point(25, 50), 
+                    calculatedGroundSteering, 
+                    cv::Point(1, 50), 
                     cv::FONT_HERSHEY_DUPLEX,
-                    0.5,
+                    0.35,
                     CV_RGB(0,250,154));
 
                 {
@@ -456,9 +460,9 @@ std::string complete = total.append(std::string(name)); // Concats all info
                     std::cout << sMicro << ";" << steeringWheelAngle << std::endl;
                 }
 
-                // Display image on your screen.
+                // Display debug window on your screen.
                 if (VERBOSE) {
-                    cv::imshow(sharedMemory->name().c_str(), img);
+                    cv::imshow("Debug", img);
                     cv::waitKey(1);
                 }
 
