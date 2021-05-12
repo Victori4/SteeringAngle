@@ -245,7 +245,7 @@ int32_t main(int32_t argc, char ** argv) {
               cv::Scalar colour(255, 255, 0);
               cv::drawContours(blueContourImage, contours, i, colour, -1, 8, hierarchy);
 
-              // If the current steeringWheelAngle is more than or equal to steeringMin AND less than or equal to steeringMax 
+              // If the current steeringWheelAngle is more than to steeringMin AND less than to steeringMax 
               if (steeringWheelAngle > steeringMin && steeringWheelAngle < steeringMax) {
 
                 // If a blue cone has not been detected yet AND car direction is clockwise
@@ -253,14 +253,14 @@ int32_t main(int32_t argc, char ** argv) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
 
-                  steeringWheelAngle = steeringWheelAngle - carTurnL;
+                  steeringWheelAngle = steeringWheelAngle - carTurnR;
                   //std::cout << "line 288 " << steeringWheelAngle << std::endl;
 
                 } // If a blue cone has not been detected yet AND car direction is counterclockwise
                 else if (blueConeCenter != 1 && carDirection == -1) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
-
+                
                   steeringWheelAngle = steeringWheelAngle + carTurnR;
                   //std::cout << "line 298 " << steeringWheelAngle << std::endl;
                 }
@@ -314,7 +314,7 @@ int32_t main(int32_t argc, char ** argv) {
                 cv::Scalar colour(255, 255, 0);
                 cv::drawContours(yellowContourImage, contours, i, colour, -1, 8, hierarchy);
 
-                // If the current steeringWheelAngle is more than or equal to steeringMin AND less than or equal to steeringMax
+                // If the current steeringWheelAngle is more than steeringMin AND less than to steeringMax
                 if (steeringWheelAngle > steeringMin && steeringWheelAngle < steeringMax) {
 
                   // If a yellow cone has not been detected yet AND car direction is clockwise
@@ -322,7 +322,7 @@ int32_t main(int32_t argc, char ** argv) {
                     // Set yellowConeCenter as 1 because it has detected a cone
                     yellowConeCenter = 1;
 
-                    steeringWheelAngle = steeringWheelAngle - carTurnR;
+                    steeringWheelAngle = steeringWheelAngle - carTurnL;
                     // std::cout << "line 368 " << steeringWheelAngle << std::endl;
 
                   } // If a yellow cone has not been detected yet AND car direction is counterclockwise 
