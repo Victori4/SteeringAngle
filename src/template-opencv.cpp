@@ -253,6 +253,7 @@ int32_t main(int32_t argc, char ** argv) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
 
+				  // Turn right when a blue cone is detected, to steer away from the cone
                   steeringWheelAngle = steeringWheelAngle - carTurnR;
                   //std::cout << "line 288 " << steeringWheelAngle << std::endl;
 
@@ -261,7 +262,8 @@ int32_t main(int32_t argc, char ** argv) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
                 
-                  steeringWheelAngle = steeringWheelAngle + carTurnR;
+                 // Turn left when a blue cone is detected, to steer away from the cone
+                  steeringWheelAngle = steeringWheelAngle - carTurnL;
                   //std::cout << "line 298 " << steeringWheelAngle << std::endl;
                 }
 
@@ -322,6 +324,7 @@ int32_t main(int32_t argc, char ** argv) {
                     // Set yellowConeCenter as 1 because it has detected a cone
                     yellowConeCenter = 1;
 
+                    // Turn left when a yellow cone is detected, to steer away from the cone
                     steeringWheelAngle = steeringWheelAngle - carTurnL;
                     // std::cout << "line 368 " << steeringWheelAngle << std::endl;
 
@@ -330,7 +333,8 @@ int32_t main(int32_t argc, char ** argv) {
                     // Set yellowConeCenter as 1 because it has detected a cone
                     yellowConeCenter = 1;
 
-                    steeringWheelAngle = steeringWheelAngle + carTurnL;
+                    // Turn right when a yellow cone is detected, to steer away from the cone
+                    steeringWheelAngle = steeringWheelAngle - carTurnR;
                     //std::cout << "line 378 " << steeringWheelAngle << std::endl;
                   }
 
