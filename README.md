@@ -5,7 +5,7 @@
 # READ ME
 
 ## Purpose
-We will create a microservice that will determine the steering angle of the vehicle, to the best of our ability mimic the behavior of the car in the provided videos.
+We will create a microservice that will determine the steering angle of the vehicle, to the best of our ability mimic the behaviour of the car in the provided videos.
 
 ## Software Requirement Specification (SRS)
 1. The system shall open a debug window when the command line parameter --verbose is provided.
@@ -81,11 +81,21 @@ https://docs.docker.com/compose/install/
 
 8. Build the project using Docker. Open a new terminal and navigate to the folder containing all the source files. Use the following command to run the build:
 
-`docker build -t <tag> -f Dockerfile .`
+`docker build -f Dockerfile -t group-16 .`
 
-9. If successful, create a Docker container based on the Docker image
+9. Open a new terminal window in a folder with downloaded videos and type this command to run OpenDLV:
 
-`docker run --rm <tag> `
+`docker run --rm --init --net=host --name=opendlv-vehicle-view -v $PWD:/opt/vehicle-view/recordings -v /var/run/docker.sock:/var/run/docker.sock -p 8081:8081 chalmersrevere/opendlv-vehicle-view-multi:v0.0.60`
+
+10. Open a new terminal window and type this command to run H264 decoder:
+
+`xhost +`
+
+`docker run --rm -ti --net=host --ipc=host -e DISPLAY=$DISPLAY -v /tmp:/tmp h264decoder:v0.0.4 --cid=253 --name=img`
+
+11. Open a new terminal window and type this command to run the microservice:
+
+`docker run --rm -ti --net=host --ipc=host -e DISPLAY=$DISPLAY -v /tmp:/tmp group-16:latest --cid=253 --name=img --width=640 --height=480 --verbose`
 
 ### Tools
 * G++ 
@@ -108,5 +118,12 @@ If there is unexpected behaviour caused by a feature, an issue describing the bu
 * Use present tense in the title of commit (ex: “Fix bug #79”) and then in the body of the commit use past tense to describe exactly what was done
 * At the start of the commit description, write the names of each of the members who contributed to the commit.
 * If the code contributes to the resolution of an issue, the issue will be referenced at the end of the commit.
+
+##  Developers 
+* Fayona Cowperthwaite
+* Dominique Deramat
+* Victoria Vu
+* Zhijie Wei
+
 
 
