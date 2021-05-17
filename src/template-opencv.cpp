@@ -108,7 +108,8 @@ int32_t main(int32_t argc, char ** argv) {
       int frameCounter = 0; // used to count starting frames
       int frameSampleSize = 5; // intial number of frames used to determine direction
 
-      int identifiedShape = 72; // pixel size used to determine cones
+      int directionDetectionShape = 85; // pixel size used to determine cones in left region
+      int identifiedShape = 72; // pixel size used to determine cones in main region
       int blueConeExists = 0; // flag to check if blue cones have been detected
 
       // Variables for steering angle calculation
@@ -193,8 +194,8 @@ int32_t main(int32_t argc, char ** argv) {
           // Loops over the contours vector
           for (unsigned int i = 0; i < contours.size(); i++) {
 
-            // If the current index of the vector has a contour area that is larger than the defined number of pixels in identifiedShape, we have a cone
-            if (cv::contourArea(contours[i]) > identifiedShape) {
+            // If the current index of the vector has a contour area that is larger than the defined number of pixels in directionDetectionShape, we have a cone
+            if (cv::contourArea(contours[i]) > directionDetectionShape) {
               // Draws the contour of the cone on the image
               cv::Scalar colour(255, 255, 0);
               cv::drawContours(leftContourImage, contours, i, colour, -1, 8, hierarchy);
@@ -209,7 +210,7 @@ int32_t main(int32_t argc, char ** argv) {
             }
           }
           // Frame counter printed for testing purposes
-          // std::cout << "frame counter" << frameCounter;
+           //std::cout << "Car direction: " << carDirection;
         }
 
         // If frameCounter is larger than or equal to frameSampleSize
