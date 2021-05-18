@@ -33,83 +33,82 @@
 int32_t main(int32_t argc, char ** argv) {
   int32_t retCode {
     1
-  };
+};
   // Parse the command line parameters as we require the user to specify some mandatory information on startup.
-  auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-  if ((0 == commandlineArguments.count("cid")) ||
+auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
+if ((0 == commandlineArguments.count("cid")) ||
     (0 == commandlineArguments.count("name")) ||
     (0 == commandlineArguments.count("width")) ||
     (0 == commandlineArguments.count("height"))) {
     std::cerr << argv[0] << " attaches to a shared memory area containing an ARGB image." << std::endl;
-    std::cerr << "Usage:   " << argv[0] << " --cid=<OD4 session> --name=<name of shared memory area> [--verbose]" << std::endl;
-    std::cerr << "         --cid:    CID of the OD4Session to send and receive messages" << std::endl;
-    std::cerr << "         --name:   name of the shared memory area to attach" << std::endl;
-    std::cerr << "         --width:  width of the frame" << std::endl;
-    std::cerr << "         --height: height of the frame" << std::endl;
-    std::cerr << "Example: " << argv[0] << " --cid=253 --name=img --width=640 --height=480 --verbose" << std::endl;
-  } else {
+std::cerr << "Usage:   " << argv[0] << " --cid=<OD4 session> --name=<name of shared memory area> [--verbose]" << std::endl;
+std::cerr << "         --cid:    CID of the OD4Session to send and receive messages" << std::endl;
+std::cerr << "         --name:   name of the shared memory area to attach" << std::endl;
+std::cerr << "         --width:  width of the frame" << std::endl;
+std::cerr << "         --height: height of the frame" << std::endl;
+std::cerr << "Example: " << argv[0] << " --cid=253 --name=img --width=640 --height=480 --verbose" << std::endl;
+} else {
     // Extract the values from the command line parameters
     const std::string NAME {
       commandlineArguments["name"]
-    };
-    const uint32_t WIDTH {
+  };
+  const uint32_t WIDTH {
       static_cast < uint32_t > (std::stoi(commandlineArguments["width"]))
-    };
-    const uint32_t HEIGHT {
+  };
+  const uint32_t HEIGHT {
       static_cast < uint32_t > (std::stoi(commandlineArguments["height"]))
-    };
-    const bool VERBOSE {
+  };
+  const bool VERBOSE {
       commandlineArguments.count("verbose") != 0
-    };
+  };
 
     // Attach to the shared memory.
-    std::unique_ptr < cluon::SharedMemory > sharedMemory {
+  std::unique_ptr < cluon::SharedMemory > sharedMemory {
       new cluon::SharedMemory {
         NAME
-      }
-    };
-    if (sharedMemory && sharedMemory -> valid()) {
-      std::clog << argv[0] << ": Attached to shared memory '" << sharedMemory -> name() << " (" << sharedMemory -> size() << " bytes)." << std::endl;
+    }
+};
+if (sharedMemory && sharedMemory -> valid()) {
+  std::clog << argv[0] << ": Attached to shared memory '" << sharedMemory -> name() << " (" << sharedMemory -> size() << " bytes)." << std::endl;
 
       // Interface to a running OpenDaVINCI session where network messages are exchanged.
       // The instance od4 allows you to send and receive messages.
-      cluon::OD4Session od4 {
-        static_cast < uint16_t > (std::stoi(commandlineArguments["cid"]))
-      };
+  cluon::OD4Session od4 {
+    static_cast < uint16_t > (std::stoi(commandlineArguments["cid"]))
+};
 
-      opendlv::proxy::GroundSteeringRequest gsr;
-      std::mutex gsrMutex;
-      auto onGroundSteeringRequest = [ & gsr, & gsrMutex](cluon::data::Envelope && env) {
+opendlv::proxy::GroundSteeringRequest gsr;
+std::mutex gsrMutex;
+auto onGroundSteeringRequest = [ & gsr, & gsrMutex](cluon::data::Envelope && env) {
         // The envelope data structure provide further details, such as sampleTimePoint as shown in this test case:
         // https://github.com/chrberger/libcluon/blob/master/libcluon/testsuites/TestEnvelopeConverter.cpp#L31-L40
-        std::lock_guard < std::mutex > lck(gsrMutex);
-        gsr = cluon::extractMessage < opendlv::proxy::GroundSteeringRequest > (std::move(env));
+    std::lock_guard < std::mutex > lck(gsrMutex);
+    gsr = cluon::extractMessage < opendlv::proxy::GroundSteeringRequest > (std::move(env));
         //std::cout << "lambda: groundSteering = " << gsr.groundSteering() << std::endl;
-      };
+};
 
-      od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
+od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
 
       // HSV values for blue
-      int minHueBlue = 102;
-      int maxHueBlue = 150;
-      int minSatBlue = 88;
-      int maxSatBlue = 165;
-      int minValueBlue = 43;
-      int maxValueBlue = 222;
+int minHueBlue = 102;
+int maxHueBlue = 150;
+int minSatBlue = 88;
+int maxSatBlue = 165;
+int minValueBlue = 43;
+int maxValueBlue = 222;
 
       //HSV values for yellow
-      int minHueYellow = 0;
-      int maxHueYellow = 46;
-      int minSatYellow = 108;
-      int maxSatYellow = 221;
-      int minValueYellow = 104;
-      int maxValueYellow = 255;
+int minHueYellow = 0;
+int maxHueYellow = 46;
+int minSatYellow = 108;
+int maxSatYellow = 221;
+int minValueYellow = 104;
+int maxValueYellow = 255;
 
       int frameCounter = 0; // used to count starting frames
       int frameSampleSize = 5; // intial number of frames used to determine direction
 
-      int directionDetectionShape = 85; // pixel size used to determine cones in left region
-      int identifiedShape = 72; // pixel size used to determine cones in main region
+      int identifiedShape = 60; // pixel size used to determine cones
       int blueConeExists = 0; // flag to check if blue cones have been detected
 
       // Variables for steering angle calculation
@@ -145,7 +144,7 @@ int32_t main(int32_t argc, char ** argv) {
           // Copy the pixels from the shared memory into our own data structure.
           cv::Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory -> data());
           img = wrapped.clone();
-        }
+      }
 
         std::pair < bool, cluon::data::TimeStamp > sTime = sharedMemory -> getTimeStamp(); // Saving current time in sTime var
 
@@ -154,14 +153,6 @@ int32_t main(int32_t argc, char ** argv) {
 
         //Shared memory is unlocked
         sharedMemory -> unlock();
-
-        // Defining the regions of interest for both centre and left
-        cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
-        cv::Rect regionOfInterestLeft = cv::Rect(80, 235, 125, 100);
-
-        // Creating images with the defined regions of interest
-        cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
-        cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
 
         // Defining images for later use
         cv::Mat hsvLeftImg;
@@ -173,67 +164,79 @@ int32_t main(int32_t argc, char ** argv) {
         if (frameCounter < frameSampleSize) {
           // Operation to find blue cones in HSV image
 
+            // Defining the regions of interest for left
+            cv::Rect regionOfInterestLeft = cv::Rect(0, 300, 230, 150);
+
+            // Creating image with the defined regions of interest
+            cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
+
           // Converts the imageWithRegionLeft image to HSV values and stores the result in hsvLeftImg
-          cv::cvtColor(imageWithRegionLeft, hsvLeftImg, cv::COLOR_BGR2HSV);
+            cv::cvtColor(imageWithRegionLeft, hsvLeftImg, cv::COLOR_BGR2HSV);
           // Applying our defined HSV values as thresholds to hsvLeftImg to create a new detectLeftImg
-          cv::inRange(hsvLeftImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectLeftImg);
+            cv::inRange(hsvLeftImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectLeftImg);
 
           //Applying Gaussian blur to detectLeftImg
-          cv::GaussianBlur(detectLeftImg, detectLeftImg, cv::Size(5, 5), 0);
+            cv::GaussianBlur(detectLeftImg, detectLeftImg, cv::Size(5, 5), 0);
 
           //Applying dilate and erode to detectLeftImg to remove holes from foreground
-          cv::dilate(detectLeftImg, detectLeftImg, 0);
-          cv::erode(detectLeftImg, detectLeftImg, 0);
+            cv::dilate(detectLeftImg, detectLeftImg, 0);
+            cv::erode(detectLeftImg, detectLeftImg, 0);
 
           // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-          cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+            cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
           // Creates a mat object of the same size as detectLeftImg used for storing the drawn contours
-          leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
+            leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
 
           // Loops over the contours vector
-          for (unsigned int i = 0; i < contours.size(); i++) {
+            for (unsigned int i = 0; i < contours.size(); i++) {
 
-            // If the current index of the vector has a contour area that is larger than the defined number of pixels in directionDetectionShape, we have a cone
-            if (cv::contourArea(contours[i]) > directionDetectionShape) {
+            // If the current index of the vector has a contour area that is larger than the defined number of pixels in identifiedShape, we have a cone
+                if (cv::contourArea(contours[i]) > identifiedShape) {
               // Draws the contour of the cone on the image
-              cv::Scalar colour(255, 255, 0);
-              cv::drawContours(leftContourImage, contours, i, colour, -1, 8, hierarchy);
+                  cv::Scalar colour(255, 255, 0);
+                  cv::drawContours(leftContourImage, contours, i, colour, -1, 8, hierarchy);
 
               // Set blueConeExists flag to 1 to indicate that we have found a flag
-              blueConeExists = 1;
+                  blueConeExists = 1;
 
               //If blue cones are detected, that means the car direction is clockwise and the carDirection must be set as 1
-              if (blueConeExists == 1) {
-                carDirection = 1;
-              }
+                  if (blueConeExists == 1) {
+                    carDirection = 1;
+                }
             }
-          }
-          // Frame counter printed for testing purposes
-           //std::cout << "Car direction: " << carDirection;
         }
+          // Frame counter printed for testing purposes
+          // std::cout << "frame counter" << frameCounter;
+    }
 
         // If frameCounter is larger than or equal to frameSampleSize
-        if (frameCounter >= frameSampleSize) {
+    if (frameCounter >= frameSampleSize) {
+
+        // Defining the regions of interest for both centre 
+        cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
+
+        // Creating images with the defined regions of interest
+        cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
 
           // Converts the imageWithRegionCentre image to HSV values and stores the result in hsvCenterImg
-          cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
+        cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
 
           // Applying our defined HSV values as thresholds to hsvCenterImg to create a new detectCenterImg
-          cv::inRange(hsvCenterImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectCenterImg);
+        cv::inRange(hsvCenterImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectCenterImg);
 
           //Applying Gaussian blur to detectCenterImg
-          cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
+        cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
 
           //Applying dilate and erode to detectCenterImg to remove holes from foreground
-          cv::dilate(detectCenterImg, detectCenterImg, 0);
-          cv::erode(detectCenterImg, detectCenterImg, 0);
+        cv::dilate(detectCenterImg, detectCenterImg, 0);
+        cv::erode(detectCenterImg, detectCenterImg, 0);
 
           // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-          cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+        cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
           // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
-          cv::Mat blueContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
+        cv::Mat blueContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
 
           int blueConeCenter = 0; // Flag for whether blue cones are detected in the image
 
@@ -254,7 +257,7 @@ int32_t main(int32_t argc, char ** argv) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
 
-				  // Turn right when a blue cone is detected, to steer away from the cone
+                  // Turn right when a blue cone is detected, to steer away from the cone
                   steeringWheelAngle = steeringWheelAngle - carTurnR;
                   //std::cout << "line 288 " << steeringWheelAngle << std::endl;
 
@@ -262,11 +265,11 @@ int32_t main(int32_t argc, char ** argv) {
                 else if (blueConeCenter != 1 && carDirection == -1) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
-                
+
                  // Turn left when a blue cone is detected, to steer away from the cone
                   steeringWheelAngle = steeringWheelAngle - carTurnL;
                   //std::cout << "line 298 " << steeringWheelAngle << std::endl;
-                }
+              }
 
               } // If the current steering angle is less than steeringMin or more than steeringMax 
               else {
@@ -274,38 +277,38 @@ int32_t main(int32_t argc, char ** argv) {
                 blueConeCenter = 1;
                 steeringWheelAngle = 0.0;
                 //std::cout << "line 306 " << steeringWheelAngle << std::endl;
-              }
-
             }
-          }
+
+        }
+    }
           // Pop up window used for testing 
           // If verbose is included in the command line, a window showing only the blue contours will appear
-          if (VERBOSE) {
-            cv::imshow("Blue Contours", blueContourImage);
-            cv::waitKey(1);
-          }
+    if (VERBOSE) {
+        cv::imshow("Blue Contours", blueContourImage);
+        cv::waitKey(1);
+    }
 
           // If a blue cone hasn't been detected, we check for yellow cones
-          if (blueConeCenter != 1) {
+    if (blueConeCenter != 1) {
 
             // Converts the imageWithRegionCentre image to HSV values and stores the result in hsvCenterImg
-            cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
+        cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
 
             // Applying our defined HSV values as thresholds to hsvCenterImg to create a new detectCenterImg
-            cv::inRange(hsvCenterImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectCenterImg);
+        cv::inRange(hsvCenterImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectCenterImg);
 
             //Applying Gaussian blur to detectCenterImg
-            cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
+        cv::GaussianBlur(detectCenterImg, detectCenterImg, cv::Size(5, 5), 0);
 
             //Applying dilate and erode to detectCenterImg to remove holes from foreground
-            cv::dilate(detectCenterImg, detectCenterImg, 0);
-            cv::erode(detectCenterImg, detectCenterImg, 0);
+        cv::dilate(detectCenterImg, detectCenterImg, 0);
+        cv::erode(detectCenterImg, detectCenterImg, 0);
 
             // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-            cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+        cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
             // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
-            cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
+        cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
 
             int yellowConeCenter = 0; // Flag for whether yellow cones are detected in the image
 
@@ -337,7 +340,7 @@ int32_t main(int32_t argc, char ** argv) {
                     // Turn right when a yellow cone is detected, to steer away from the cone
                     steeringWheelAngle = steeringWheelAngle - carTurnR;
                     //std::cout << "line 378 " << steeringWheelAngle << std::endl;
-                  }
+                }
 
                 } // If the current steering angle is less than steeringMin or more than steeringMax
                 else {
@@ -345,48 +348,48 @@ int32_t main(int32_t argc, char ** argv) {
                   yellowConeCenter = 1;
                   steeringWheelAngle = 0.0;
                   //std::cout << "line 386 " << steeringWheelAngle << std::endl;
-                }
               }
-            }
+          }
+      }
             // Pop up window used for testing
             // If verbose is included in the command line, a window showing only the yellow contours will appear
-            if (VERBOSE) {
-              cv::imshow("Yellow Contours", yellowContourImage);
-              cv::waitKey(1);
-            }
+      if (VERBOSE) {
+          cv::imshow("Yellow Contours", yellowContourImage);
+          cv::waitKey(1);
+      }
 
             // If no blue or yellow cones have been detected
-            if (yellowConeCenter == 0 && blueConeCenter == 0) {
+      if (yellowConeCenter == 0 && blueConeCenter == 0) {
               // If no cones are present, the steeringWheelAngle is set to 0
-              steeringWheelAngle = 0.00;
+          steeringWheelAngle = 0.00;
               // std::cout << "line 401 " << steeringWheelAngle << std::endl;
-            }
-          }
-        }
+      }
+  }
+}
 
         // creates string stream input, optimized buffer, convert whatever is coming in as string
-        std::ostringstream calcGroundSteering;
-        std::ostringstream actualSteering;
-        std::ostringstream timestamp;
+std::ostringstream calcGroundSteering;
+std::ostringstream actualSteering;
+std::ostringstream timestamp;
 
         // putting values into stream
-        calcGroundSteering << steeringWheelAngle;
-        actualSteering << gsr.groundSteering();
-        timestamp << sMicro;
-       
+calcGroundSteering << steeringWheelAngle;
+actualSteering << gsr.groundSteering();
+timestamp << sMicro;
+
         // creating strings for printing
-        std::string time = " Time Stamp: ";
-        std::string calculatedGroundSteering = "Calculated Ground Steering: ";
-        std::string actualGroundSteering = " Actual Ground Steering: ";
-        std::string groundSteeringAngle = std::to_string(steeringWheelAngle);
+std::string time = " Time Stamp: ";
+std::string calculatedGroundSteering = "Calculated Ground Steering: ";
+std::string actualGroundSteering = " Actual Ground Steering: ";
+std::string groundSteeringAngle = std::to_string(steeringWheelAngle);
 
         // appending into one string to display
-        calculatedGroundSteering.append(groundSteeringAngle);
-        calculatedGroundSteering.append(calcGroundSteering.str());
-        calculatedGroundSteering.append(actualGroundSteering);
-        calculatedGroundSteering.append(actualSteering.str());
-        calculatedGroundSteering.append(time);
-        calculatedGroundSteering.append(timestamp.str());
+calculatedGroundSteering.append(groundSteeringAngle);
+calculatedGroundSteering.append(calcGroundSteering.str());
+calculatedGroundSteering.append(actualGroundSteering);
+calculatedGroundSteering.append(actualSteering.str());
+calculatedGroundSteering.append(time);
+calculatedGroundSteering.append(timestamp.str());
 
         // Displays information on video
         cv::putText(img, //target image
@@ -399,18 +402,18 @@ int32_t main(int32_t argc, char ** argv) {
         {
           std::lock_guard < std::mutex > lck(gsrMutex);
           // std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
-          std::cout << sMicro << ";" << steeringWheelAngle << std::endl;
-        }
+          std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direction" << carDirection << std::endl;
+      }
 
         // Displays debug window on screen
-        if (VERBOSE) {
+      if (VERBOSE) {
           cv::imshow("Debug", img);
           cv::waitKey(1);
-        }
-
       }
-    }
-    retCode = 0;
+
   }
-  return retCode;
+}
+retCode = 0;
+}
+return retCode;
 }
