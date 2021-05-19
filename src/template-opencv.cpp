@@ -183,7 +183,7 @@ int32_t main(int32_t argc, char ** argv) {
           cv::erode(detectLeftImg, detectLeftImg, 0);
 
           // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-          cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+          cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
           // Creates a mat object of the same size as detectLeftImg used for storing the drawn contours
           leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
@@ -233,7 +233,7 @@ int32_t main(int32_t argc, char ** argv) {
           cv::erode(detectCenterImg, detectCenterImg, 0);
 
           // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-          cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+          cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
           // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
           cv::Mat blueContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
@@ -305,7 +305,7 @@ int32_t main(int32_t argc, char ** argv) {
             cv::erode(detectCenterImg, detectCenterImg, 0);
 
             // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-            cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+            cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
             // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
             cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
