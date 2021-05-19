@@ -106,7 +106,7 @@ int32_t main(int32_t argc, char ** argv) {
       int maxValueYellow = 255;
 
       int frameCounter = 0; // used to count starting frames
-      int frameSampleSize = 5; // intial number of frames used to determine direction
+      int frameSampleSize = 5; // initial number of frames used to determine direction
 
       int identifiedShape = 60; // pixel size used to determine cones
       int blueConeExists = 0; // flag to check if blue cones have been detected
@@ -401,8 +401,8 @@ int32_t main(int32_t argc, char ** argv) {
 
         {
           std::lock_guard < std::mutex > lck(gsrMutex);
-          // std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
-          std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direction" << carDirection << std::endl;
+          std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
+          //std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direction" << carDirection << std::endl;
         }
 
         // Displays debug window on screen
