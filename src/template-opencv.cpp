@@ -106,9 +106,9 @@ int32_t main(int32_t argc, char ** argv) {
       int maxValueYellow = 255;
 
       int frameCounter = 0; // used to count starting frames
-      int frameSampleSize = 5; // intial number of frames used to determine direction
+      int frameSampleSize = 5; // initial number of frames used to determine direction
 
-      int identifiedShape = 72; // pixel size used to determine cones
+      int identifiedShape = 60; // pixel size used to determine cones
       int blueConeExists = 0; // flag to check if blue cones have been detected
 
       // Variables for steering angle calculation
@@ -154,14 +154,6 @@ int32_t main(int32_t argc, char ** argv) {
         //Shared memory is unlocked
         sharedMemory -> unlock();
 
-        // Defining the regions of interest for both centre and left
-        cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
-        cv::Rect regionOfInterestLeft = cv::Rect(80, 235, 125, 100);
-
-        // Creating images with the defined regions of interest
-        cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
-        cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
-
         // Defining images for later use
         cv::Mat hsvLeftImg;
         cv::Mat hsvCenterImg;
@@ -171,6 +163,12 @@ int32_t main(int32_t argc, char ** argv) {
         // loop runs until frame counter is greater than the sample size of 5, used to determine direction (counter clockwise, clockwise etc...)
         if (frameCounter < frameSampleSize) {
           // Operation to find blue cones in HSV image
+
+          // Defining the regions of interest for left
+          cv::Rect regionOfInterestLeft = cv::Rect(0, 300, 230, 150);
+
+          // Creating image with the defined regions of interest
+          cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
 
           // Converts the imageWithRegionLeft image to HSV values and stores the result in hsvLeftImg
           cv::cvtColor(imageWithRegionLeft, hsvLeftImg, cv::COLOR_BGR2HSV);
@@ -185,7 +183,7 @@ int32_t main(int32_t argc, char ** argv) {
           cv::erode(detectLeftImg, detectLeftImg, 0);
 
           // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-          cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+          cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
           // Creates a mat object of the same size as detectLeftImg used for storing the drawn contours
           leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
@@ -215,6 +213,12 @@ int32_t main(int32_t argc, char ** argv) {
         // If frameCounter is larger than or equal to frameSampleSize
         if (frameCounter >= frameSampleSize) {
 
+          // Defining the regions of interest for both centre 
+          cv::Rect regionOfInterestCentre = cv::Rect(200, 245, 230, 115);
+
+          // Creating images with the defined regions of interest
+          cv::Mat imageWithRegionCentre = img(regionOfInterestCentre);
+
           // Converts the imageWithRegionCentre image to HSV values and stores the result in hsvCenterImg
           cv::cvtColor(imageWithRegionCentre, hsvCenterImg, cv::COLOR_BGR2HSV);
 
@@ -229,7 +233,7 @@ int32_t main(int32_t argc, char ** argv) {
           cv::erode(detectCenterImg, detectCenterImg, 0);
 
           // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-          cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+          cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
           // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
           cv::Mat blueContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
@@ -253,7 +257,7 @@ int32_t main(int32_t argc, char ** argv) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
 
-				  // Turn right when a blue cone is detected, to steer away from the cone
+                  // Turn right when a blue cone is detected, to steer away from the cone
                   steeringWheelAngle = steeringWheelAngle - carTurnR;
                   //std::cout << "line 288 " << steeringWheelAngle << std::endl;
 
@@ -261,8 +265,8 @@ int32_t main(int32_t argc, char ** argv) {
                 else if (blueConeCenter != 1 && carDirection == -1) {
                   // Set blueConeCenter as 1 because it has detected a cone 
                   blueConeCenter = 1;
-                
-                 // Turn left when a blue cone is detected, to steer away from the cone
+
+                  // Turn left when a blue cone is detected, to steer away from the cone
                   steeringWheelAngle = steeringWheelAngle - carTurnL;
                   //std::cout << "line 298 " << steeringWheelAngle << std::endl;
                 }
@@ -301,7 +305,7 @@ int32_t main(int32_t argc, char ** argv) {
             cv::erode(detectCenterImg, detectCenterImg, 0);
 
             // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-            cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+            cv::findContours(detectCenterImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
             // Creates a mat object of the same size as detectCenterImg used for storing the drawn contours
             cv::Mat yellowContourImage = cv::Mat::zeros(detectCenterImg.rows, detectCenterImg.cols, CV_8UC3);
@@ -372,7 +376,7 @@ int32_t main(int32_t argc, char ** argv) {
         calcGroundSteering << steeringWheelAngle;
         actualSteering << gsr.groundSteering();
         timestamp << sMicro;
-       
+
         // creating strings for printing
         std::string time = " Time Stamp: ";
         std::string calculatedGroundSteering = "Calculated Ground Steering: ";
@@ -397,8 +401,8 @@ int32_t main(int32_t argc, char ** argv) {
 
         {
           std::lock_guard < std::mutex > lck(gsrMutex);
-          // std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
-          std::cout << sMicro << ";" << steeringWheelAngle << std::endl;
+          std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
+          //std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direction" << carDirection << std::endl;
         }
 
         // Displays debug window on screen
