@@ -174,7 +174,7 @@ int32_t main(int32_t argc, char ** argv) {
           cv::cvtColor(imageWithRegionRight, hsvRightImg, cv::COLOR_BGR2HSV);
 
           // Applying our defined HSV values as thresholds to hsvRightImg to create a new detectRightImg
-          cv::inRange(hsvRightImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectRightImg);
+          cv::inRange(hsvRightImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectRightImg);
 
           //Applying Gaussian blur to detectRightImg
           cv::GaussianBlur(detectRightImg, detectRightImg, cv::Size(5, 5), 0);
