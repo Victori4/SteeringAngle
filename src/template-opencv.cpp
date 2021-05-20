@@ -165,7 +165,7 @@ int32_t main(int32_t argc, char ** argv) {
           // Operation to find yellow cones in HSV image
 
           // Defining the regions of interest for the right
-          cv::Rect regionOfInterestRight = cv::Rect(395, 275, 150, 115);
+          cv::Rect regionOfInterestRight = cv::Rect(415, 265, 150, 125);
 
           // Creating image with the defined regions of interest
           cv::Mat imageWithRegionRight = img(regionOfInterestRight);
@@ -404,7 +404,7 @@ int32_t main(int32_t argc, char ** argv) {
         {
           std::lock_guard < std::mutex > lck(gsrMutex);
           //std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
-          std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direction: " << carDirection << std::endl;
+          std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << std::endl;
         }
 
         // Displays debug window on screen
