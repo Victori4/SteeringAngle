@@ -404,7 +404,7 @@ int32_t main(int32_t argc, char ** argv) {
         {
           std::lock_guard < std::mutex > lck(gsrMutex);
           //std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
-          std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << std::endl;
+          std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direciton: " << carDirection << std::endl;
         }
 
         // Displays debug window on screen
