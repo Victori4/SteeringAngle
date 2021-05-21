@@ -99,29 +99,29 @@ int32_t main(int32_t argc, char ** argv) {
 
       //HSV values for yellow
       int minHueYellow = 0;
-      int maxHueYellow = 46;
-      int minSatYellow = 108;
+      int maxHueYellow = 42;
+      int minSatYellow = 75;
       int maxSatYellow = 221;
-      int minValueYellow = 104;
+      int minValueYellow = 170;
       int maxValueYellow = 255;
 
       int frameCounter = 0; // used to count starting frames
       int frameSampleSize = 5; // initial number of frames used to determine direction
 
       int identifiedShape = 60; // pixel size used to determine cones
-      int blueConeExists = 0; // flag to check if blue cones have been detected
+      int yellowConeExists = 0; // flag to check if blue cones have been detected
 
       // Variables for steering angle calculation
       float steeringWheelAngle = 0.0;
       float steeringMax = 0.3;
       float steeringMin = -0.3;
-      int carDirection = -1; // left car direction is negative (counter clockwise), default value
+      int carDirection = -1; // left car direction is negative (counterclockwise), default value
 
       // Variables for turning
       float carTurnR = 0.025;
       float carTurnL = -0.025;
 
-      cv::Mat leftContourImage; // stores image when identifying car direction
+      cv::Mat rightContourImage; // stores image when identifying car direction
 
       // Vectors used for storing cone contours 
       std::vector < std::vector < cv::Point > > contours;
@@ -155,53 +155,55 @@ int32_t main(int32_t argc, char ** argv) {
         sharedMemory -> unlock();
 
         // Defining images for later use
-        cv::Mat hsvLeftImg;
+        cv::Mat hsvRightImg;
         cv::Mat hsvCenterImg;
-        cv::Mat detectLeftImg;
+        cv::Mat detectRightImg;
         cv::Mat detectCenterImg;
 
-        // loop runs until frame counter is greater than the sample size of 5, used to determine direction (counter clockwise, clockwise etc...)
+        // loop runs until frame counter is greater than the sample size of 5, used to determine direction (counterclockwise, clockwise etc...)
         if (frameCounter < frameSampleSize) {
-          // Operation to find blue cones in HSV image
+          // Operation to find yellow cones in HSV image
 
-          // Defining the regions of interest for left
-          cv::Rect regionOfInterestLeft = cv::Rect(0, 300, 230, 150);
+          // Defining the regions of interest for the right
+          cv::Rect regionOfInterestRight = cv::Rect(415, 265, 150, 125);
 
           // Creating image with the defined regions of interest
-          cv::Mat imageWithRegionLeft = img(regionOfInterestLeft);
+          cv::Mat imageWithRegionRight = img(regionOfInterestRight);
 
-          // Converts the imageWithRegionLeft image to HSV values and stores the result in hsvLeftImg
-          cv::cvtColor(imageWithRegionLeft, hsvLeftImg, cv::COLOR_BGR2HSV);
-          // Applying our defined HSV values as thresholds to hsvLeftImg to create a new detectLeftImg
-          cv::inRange(hsvLeftImg, cv::Scalar(minHueBlue, minSatBlue, minValueBlue), cv::Scalar(maxHueBlue, maxSatBlue, maxValueBlue), detectLeftImg);
+          // Converts the imageWithRegionRight image to HSV values and stores the result in hsvRightImg
+          cv::cvtColor(imageWithRegionRight, hsvRightImg, cv::COLOR_BGR2HSV);
 
-          //Applying Gaussian blur to detectLeftImg
-          cv::GaussianBlur(detectLeftImg, detectLeftImg, cv::Size(5, 5), 0);
+          // Applying our defined HSV values as thresholds to hsvRightImg to create a new detectRightImg
+          cv::inRange(hsvRightImg, cv::Scalar(minHueYellow, minSatYellow, minValueYellow), cv::Scalar(maxHueYellow, maxSatYellow, maxValueYellow), detectRightImg);
+
+          //Applying Gaussian blur to detectRightImg
+          cv::GaussianBlur(detectRightImg, detectRightImg, cv::Size(5, 5), 0);
 
           //Applying dilate and erode to detectLeftImg to remove holes from foreground
-          cv::dilate(detectLeftImg, detectLeftImg, 0);
-          cv::erode(detectLeftImg, detectLeftImg, 0);
+          cv::dilate(detectRightImg, detectRightImg, 0);
+          cv::erode(detectRightImg, detectRightImg, 0);
 
-          // The below will find the contours of the cones in detectLeftImg and store them in the contours vector
-          cv::findContours(detectLeftImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+          // The below will find the contours of the cones in detectRightImg and store them in the contours vector
+          cv::findContours(detectRightImg, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-          // Creates a mat object of the same size as detectLeftImg used for storing the drawn contours
-          leftContourImage = cv::Mat::zeros(detectLeftImg.rows, detectLeftImg.cols, CV_8UC3);
+          // Creates a mat object of the same size as detectRightImg used for storing the drawn contours
+          rightContourImage = cv::Mat::zeros(detectRightImg.rows, detectRightImg.cols, CV_8UC3);
 
           // Loops over the contours vector
           for (unsigned int i = 0; i < contours.size(); i++) {
 
             // If the current index of the vector has a contour area that is larger than the defined number of pixels in identifiedShape, we have a cone
             if (cv::contourArea(contours[i]) > identifiedShape) {
+
               // Draws the contour of the cone on the image
               cv::Scalar colour(255, 255, 0);
-              cv::drawContours(leftContourImage, contours, i, colour, -1, 8, hierarchy);
+              cv::drawContours(rightContourImage, contours, i, colour, -1, 8, hierarchy);
 
-              // Set blueConeExists flag to 1 to indicate that we have found a flag
-              blueConeExists = 1;
+              // Set yellowConeExists flag to 1 to indicate that we have found a flag
+              yellowConeExists = 1;
 
-              //If blue cones are detected, that means the car direction is clockwise and the carDirection must be set as 1
-              if (blueConeExists == 1) {
+              //If yellow cones are detected, that means the car direction is clockwise and the carDirection must be set as 1
+              if (yellowConeExists == 1) {
                 carDirection = 1;
               }
             }
@@ -402,7 +404,7 @@ int32_t main(int32_t argc, char ** argv) {
         {
           std::lock_guard < std::mutex > lck(gsrMutex);
           std::cout << "group_16;" << sMicro << ";" << steeringWheelAngle << std::endl;
-          //std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direction" << carDirection << std::endl;
+         // std::cout << sMicro << ";" << steeringWheelAngle << ";" << gsr.groundSteering() << " car direction: " << carDirection << std::endl;
         }
 
         // Displays debug window on screen
