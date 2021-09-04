@@ -124,7 +124,3 @@ If there is unexpected behaviour caused by a feature, an issue describing the bu
 * Dominique Deramat
 * Victoria Vu
 * Zhijie Wei
-
-
-
-# SteeringAngle
